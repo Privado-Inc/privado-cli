@@ -1,8 +1,10 @@
 package docker
 
+import "github.com/Privado-Inc/privado/pkg/config"
+
 type containerVolumes struct {
-	licenseVolumeEnabled, sourceCodeVolumeEnabled bool
-	licenseVolumeHost, sourceCodeVolumeHost       string
+	licenseVolumeEnabled, sourceCodeVolumeEnabled, externalRulesVolumeEnabled bool
+	licenseVolumeHost, sourceCodeVolumeHost, externalRulesVolumeHost          string
 }
 
 type containerPorts struct {
@@ -56,6 +58,24 @@ func OptionWithSourceVolume(volumeHost string) RunImageOption {
 	}
 }
 
+func OptionWithExternalRulesVolume(volumeHost string) RunImageOption {
+	return func(rh *runImageHandler) {
+		if volumeHost != "" {
+			rh.volumes.externalRulesVolumeEnabled = true
+			rh.volumes.externalRulesVolumeHost = volumeHost
+			rh.args = append(rh.args, "-er", config.AppConfig.Container.ExternalRulesVolumeDir)
+		}
+	}
+}
+
+func OptionWithDefaultRules(useDefaultRules bool) RunImageOption {
+	return func(rh *runImageHandler) {
+		if useDefaultRules {
+			rh.args = append(rh.args, "-ir", config.AppConfig.Container.InternalRulesVolumeDir)
+		}
+	}
+}
+
 func OptionWithWebPort(portHost int) RunImageOption {
 	return func(rh *runImageHandler) {
 		rh.ports.webPortEnabled = true
@@ -104,6 +124,7 @@ func OptionWithDebug(isDebug bool) RunImageOption {
 		// currently only enable output in debug mode
 		if isDebug {
 			rh.attachOutput = true
+			rh.args = append(rh.args, "--debug")
 		}
 	}
 }

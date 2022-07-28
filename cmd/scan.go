@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"path/filepath"
 	"time"
 
 	"github.com/Privado-Inc/privado/pkg/config"
@@ -19,27 +18,34 @@ var scanCmd = &cobra.Command{
 }
 
 func defineScanFlags(cmd *cobra.Command) {
-	scanCmd.Flags().IntP("port", "p", 3000, "The port to be used to render HTML results")
+	scanCmd.Flags().StringP("rules", "r", "", "Specifies the rule directory to be passed to privado-core for scanning. These external rules are merged with the default set of rules that Privado defines")
+
+	scanCmd.Flags().BoolP("ignore-default-rules", "i", false, "If specified, the default rules are ignored and only the specified rules (-r) are considered")
+
 	scanCmd.Flags().BoolP("overwrite", "o", false, "If specified, the warning prompt for existing scan results is disabled and any existing results are overwritten")
-	scanCmd.Flags().Bool("debug", false, "Debug flag to enable image output")
+	scanCmd.Flags().Bool("debug", false, "Enables privado-core image output in debug mode")
 	scanCmd.Flags().MarkHidden("debug")
 }
 
 func scan(cmd *cobra.Command, args []string) {
 	repository := args[0]
-	port, err := cmd.Flags().GetInt("port")
 	debug, _ := cmd.Flags().GetBool("debug")
-	overwriteResults, _ := cmd.Flags().GetBool("overwrite")
-	if err != nil {
-		exit(fmt.Sprint("Cannot parse flag --port", err), true)
+	// overwriteResults, _ := cmd.Flags().GetBool("overwrite")
+
+	externalRules, _ := cmd.Flags().GetString("rules")
+	if externalRules != "" {
+		externalRules = utils.GetAbsolutePath(externalRules)
+		externalRulesExists, _ := utils.DoesFileExists(externalRules)
+		if !externalRulesExists {
+			exit(fmt.Sprintf("Could not validate the rules directory: %s", externalRules), true)
+		}
 	}
 
-	// verify license
-	if err := utils.VerifyLicenseJSON(licensePath); err != nil {
+	ignoreDefaultRules, _ := cmd.Flags().GetBool("ignore-default-rules")
+	if ignoreDefaultRules && externalRules == "" {
 		exit(fmt.Sprint(
-			fmt.Sprintf("Could not verify license: %s\n", err),
-			"To request a license, run: 'privado auth <email>'\n",
-			"To bootstrap the app, run: 'privado bootstrap <license>'\n\n",
+			"Default rules cannot be ignored without any external rules.\n",
+			"You can specify your own rules using the `-r` option.\n\n",
 			"For more info, run: 'privado help'\n",
 		), true)
 	}
@@ -54,50 +60,31 @@ func scan(cmd *cobra.Command, args []string) {
 	}
 
 	// if overwrite flag is not specified, check for existing results
-	if !overwriteResults {
-		resultsPath := filepath.Join(utils.GetAbsolutePath(repository), config.AppConfig.PrivacyResultsPathSuffix)
-		if exists, _ := utils.DoesFileExists(resultsPath); exists {
-			fmt.Printf("> Scan report already exists (%s)\n", config.AppConfig.PrivacyResultsPathSuffix)
-			fmt.Println("> If you want to view or edit existing results, run 'privado load' instead")
+	// if !overwriteResults {
+	// 	resultsPath := filepath.Join(utils.GetAbsolutePath(repository), config.AppConfig.PrivacyResultsPathSuffix)
+	// 	if exists, _ := utils.DoesFileExists(resultsPath); exists {
+	// 		fmt.Printf("> Scan report already exists (%s)\n", config.AppConfig.PrivacyResultsPathSuffix)
+	// 		// fmt.Println("> If you want to view or edit existing results, run 'privado load' instead")
 
-			fmt.Println("\n> Rescan will overwrite existing results and progress")
-			confirm, _ := utils.ShowConfirmationPrompt("Continue?")
-			if !confirm {
-				exit("Terminating..", false)
-			}
-			fmt.Println()
-		}
-	}
+	// 		fmt.Println("\n> Rescan will overwrite existing results and progress")
+	// 		confirm, _ := utils.ShowConfirmationPrompt("Continue?")
+	// 		if !confirm {
+	// 			exit("Terminating..", false)
+	// 		}
+	// 		fmt.Println()
+	// 	}
+	// }
+
+	commandArgs := []string{config.AppConfig.Container.SourceCodeVolumeDir}
 
 	fmt.Println("> Scanning directory:", utils.GetAbsolutePath(repository))
 	// run image with options
 	err = docker.RunImage(
+		docker.OptionWithArgs(commandArgs),
+		docker.OptionWithAttachedOutput(),
 		docker.OptionWithSourceVolume(utils.GetAbsolutePath(repository)),
-		docker.OptionWithLicenseVolume(utils.GetAbsolutePath(licensePath)),
-		docker.OptionWithWebPort(port),
-		docker.OptionWithInterrupt(),
-		docker.OptionWithAutoSpawnBrowser(),
-		docker.OptionWithProgressLoader(
-			[]string{
-				"Scanning repository..",
-				"Scanning can take upto 5-10 minutes",
-			},
-			[]string{
-				"Scanning Complete",
-				fmt.Sprintf("Results and reports can be viewed on http://localhost:%d\n", port),
-				"Press CTRL+C anytime to terminate the process",
-				"Don't forget to save your changes before you exit",
-			},
-		),
-		docker.OptionWithExitErrorMessages([]string{
-			// known faults and errors
-			"App: Encountered error: ",
-			"Segmentation Fault",
-			"Some error occurred while processing analyzer results",
-			"privado: error: invalid choice",
-			"requests.exceptions.ConnectionError: HTTPSConnectionPool(",
-			"Failed to execute script 'app' due to unhandled exception!",
-		}),
+		docker.OptionWithDefaultRules(!ignoreDefaultRules),
+		docker.OptionWithExternalRulesVolume(externalRules),
 		docker.OptionWithDebug(debug),
 	)
 	if err != nil {

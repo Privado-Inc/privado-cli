@@ -29,10 +29,12 @@ type Configuration struct {
 }
 
 type ContainerConfiguration struct {
-	ImageURL            string
-	SourceCodeVolumeDir string
-	LicenseVolumeDir    string
-	WebPort             string
+	ImageURL               string
+	SourceCodeVolumeDir    string
+	LicenseVolumeDir       string
+	InternalRulesVolumeDir string
+	ExternalRulesVolumeDir string
+	WebPort                string
 }
 
 type ExternalConfiguration struct {
@@ -45,7 +47,7 @@ type ExternalConfiguration struct {
 func init() {
 	home, _ := homedir.Dir()
 
-	imageTag := "latest"
+	imageTag := "niagara-dev"
 	licenseFileName := "license.json"
 
 	if isDev, err := strconv.ParseBool(os.Getenv("PRIVADO_DEV")); err == nil && isDev {
@@ -60,18 +62,20 @@ func init() {
 		HomeDirectory:                    home,
 		DefaultWebPort:                   3000,
 		ConfigurationDirectory:           filepath.Join(home, ".privado"),
-		DefaultLicensePath:               filepath.Join(home, ".privado", licenseFileName),
+		DefaultLicensePath:               filepath.Join(home, ".privado", "keys", licenseFileName),
 		PrivacyResultsPathSuffix:         filepath.Join(".privado", "privacy.json"),
 		PrivacyReportsDirectorySuffix:    filepath.Join(".privado", "reports"),
-		PrivadoRepository:                "https://github.com/Privado-Inc/privado",
-		PrivadoRepositoryName:            "Privado-Inc/privado",
+		PrivadoRepository:                "https://github.com/Privado-Inc/privado-cli",
+		PrivadoRepositoryName:            "Privado-Inc/privado-cli",
 		PrivadoRepositoryReleaseFilename: fmt.Sprintf("privado-%s-%s.tar.gz", runtime.GOOS, runtime.GOARCH),
 		SlowdownTime:                     600 * time.Millisecond,
 		Container: &ContainerConfiguration{
-			ImageURL:            fmt.Sprintf("public.ecr.aws/privado/cli:%s", imageTag),
-			SourceCodeVolumeDir: "/app/code",
-			LicenseVolumeDir:    "/tmp/license.json",
-			WebPort:             "80/tcp",
+			ImageURL:               fmt.Sprintf("public.ecr.aws/privado/cli:%s", imageTag),
+			SourceCodeVolumeDir:    "/app/code",
+			LicenseVolumeDir:       "/app/keys/user.key",
+			InternalRulesVolumeDir: "/app/rules",
+			ExternalRulesVolumeDir: "/app/external-rules",
+			WebPort:                "80/tcp",
 		},
 	}
 }

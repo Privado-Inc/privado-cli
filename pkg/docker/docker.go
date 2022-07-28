@@ -69,6 +69,16 @@ func getContainerHostConfig(volumes containerVolumes, ports containerPorts) *con
 			},
 		)
 	}
+	if volumes.externalRulesVolumeEnabled {
+		hostConfig.Mounts = append(
+			hostConfig.Mounts,
+			mount.Mount{
+				Type:   "bind",
+				Source: volumes.externalRulesVolumeHost,
+				Target: config.AppConfig.Container.ExternalRulesVolumeDir,
+			},
+		)
+	}
 
 	if ports.webPortEnabled {
 		hostConfig.PortBindings = map[nat.Port][]nat.PortBinding{

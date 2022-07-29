@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Privado-Inc/privado/pkg/config"
+	"github.com/Privado-Inc/privado/pkg/fileutils"
 	"github.com/Privado-Inc/privado/pkg/utils"
 	"github.com/spf13/cobra"
 	"golang.org/x/mod/semver"
@@ -68,13 +69,13 @@ func update(cmd *cobra.Command, args []string) {
 	}
 
 	// get path to current executable
-	currentExecPath, err := utils.GetPathToCurrentBinary()
+	currentExecPath, err := fileutils.GetPathToCurrentBinary()
 	if err != nil {
 		exit(fmt.Sprint("Could not evaluate path to current binary. Auto update fail\nFor more information, visit", config.AppConfig.PrivadoRepository), true)
 	}
 
 	// check for appropriate permissions
-	hasPerm, err := utils.HasWritePermissionToFile(currentExecPath)
+	hasPerm, err := fileutils.HasWritePermissionToFile(currentExecPath)
 	if err != nil {
 		exit(fmt.Sprintf("Could not open executable for write: %s", err), true)
 	}
@@ -123,7 +124,7 @@ func update(cmd *cobra.Command, args []string) {
 	// extract .tar.gz
 	fmt.Println()
 	fmt.Println("Extracting release asset..")
-	err = utils.ExtractTarGzFile(downloadedFilePath, temporaryDirectory)
+	err = fileutils.ExtractTarGzFile(downloadedFilePath, temporaryDirectory)
 	if err != nil {
 		exit(fmt.Sprint("Could not extract release asset: ", githubReleaseDownloadURL, err), true)
 	}
@@ -135,7 +136,7 @@ func update(cmd *cobra.Command, args []string) {
 	// Replace existing binary (in current execution) by the updated binary
 	fmt.Println("Installing latest release..")
 	time.Sleep(config.AppConfig.SlowdownTime)
-	err = utils.SafeMoveFile(filepath.Join(temporaryDirectory, "privado"), currentExecPath, true)
+	err = fileutils.SafeMoveFile(filepath.Join(temporaryDirectory, "privado"), currentExecPath, true)
 	if err != nil {
 		exit(fmt.Sprint("Could not update existing installation: ", err), true)
 	}

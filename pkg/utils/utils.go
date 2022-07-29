@@ -2,16 +2,11 @@ package utils
 
 import (
 	"bufio"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"syscall"
@@ -19,94 +14,6 @@ import (
 
 	"github.com/schollz/progressbar/v3"
 )
-
-type LicenseFileType struct {
-	PrivateKey string `json:"pri_key"`
-	UserHash   string `json:"user_hash"`
-}
-
-func GetAbsolutePath(relativePath string) string {
-
-	fullPath, err := filepath.Abs(relativePath)
-	if err != nil {
-		panic(err)
-	}
-	return fullPath
-}
-
-func CopyFile(src, dst string) error {
-	// open src
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-
-	// create dst
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// copy content
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-
-	// get src permissions
-	fileStat, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-
-	// give same permissions
-	if err := os.Chmod(dst, fileStat.Mode()); err != nil {
-		return err
-	}
-
-	return out.Close()
-}
-
-func DoesFileExists(name string) (bool, error) {
-	_, err := os.Stat(name)
-	if err == nil {
-		return true, nil
-	}
-	if errors.Is(err, os.ErrNotExist) {
-		return false, nil
-	}
-	return false, err
-}
-
-func VerifyLicenseJSON(pathToFile string) error {
-	// open file
-	file, err := os.Open(pathToFile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-
-	// read file
-	dataBytes, err := ioutil.ReadAll(file)
-	if err != nil {
-		return err
-	}
-
-	// parse file
-	var license LicenseFileType
-	if err := json.Unmarshal(dataBytes, &license); err != nil {
-		return err
-	}
-
-	// verify license info
-	if license.PrivateKey == "" || license.UserHash == "" {
-		return fmt.Errorf("malformed file data")
-	}
-
-	return nil
-}
 
 func OpenURLInBrowser(url string) {
 	var cmd *exec.Cmd

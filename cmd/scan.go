@@ -6,7 +6,7 @@ import (
 
 	"github.com/Privado-Inc/privado/pkg/config"
 	"github.com/Privado-Inc/privado/pkg/docker"
-	"github.com/Privado-Inc/privado/pkg/utils"
+	"github.com/Privado-Inc/privado/pkg/fileutils"
 	"github.com/spf13/cobra"
 )
 
@@ -34,8 +34,8 @@ func scan(cmd *cobra.Command, args []string) {
 
 	externalRules, _ := cmd.Flags().GetString("rules")
 	if externalRules != "" {
-		externalRules = utils.GetAbsolutePath(externalRules)
-		externalRulesExists, _ := utils.DoesFileExists(externalRules)
+		externalRules = fileutils.GetAbsolutePath(externalRules)
+		externalRulesExists, _ := fileutils.DoesFileExists(externalRules)
 		if !externalRulesExists {
 			exit(fmt.Sprintf("Could not validate the rules directory: %s", externalRules), true)
 		}
@@ -77,12 +77,12 @@ func scan(cmd *cobra.Command, args []string) {
 
 	commandArgs := []string{config.AppConfig.Container.SourceCodeVolumeDir}
 
-	fmt.Println("> Scanning directory:", utils.GetAbsolutePath(repository))
+	fmt.Println("> Scanning directory:", fileutils.GetAbsolutePath(repository))
 	// run image with options
 	err = docker.RunImage(
 		docker.OptionWithArgs(commandArgs),
 		docker.OptionWithAttachedOutput(),
-		docker.OptionWithSourceVolume(utils.GetAbsolutePath(repository)),
+		docker.OptionWithSourceVolume(fileutils.GetAbsolutePath(repository)),
 		docker.OptionWithDefaultRules(!ignoreDefaultRules),
 		docker.OptionWithExternalRulesVolume(externalRules),
 		docker.OptionWithDebug(debug),

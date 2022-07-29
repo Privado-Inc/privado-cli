@@ -1,9 +1,15 @@
 package config
 
+import (
+	"fmt"
+
+	"github.com/Privado-Inc/privado/pkg/auth"
+)
+
 var UserConfig *UserConfiguration
 
 type UserConfiguration struct {
-	ConfigFile UserConfigurationFromFile
+	ConfigFile *UserConfigurationFromFile
 	UserHash   string
 }
 
@@ -17,12 +23,13 @@ func init() {
 	// check for .privado
 	// check for config
 	// generate user
+	err := auth.BootstrapUserKey(AppConfig.UserKeyPath, AppConfig.UserKeyDirectory)
+	if err != nil {
+		panic(fmt.Sprintf("Fatal: cannot bootstrap user key: %s", err))
+	}
 
-
-	// UserConfig = &UserConfiguration{
-	// 	MetricsEnabled:  false,
-	// 	SyncToCloudView: false,
-	// 	UserHash:        "",
-	// }
-
+	UserConfig = &UserConfiguration{
+		ConfigFile: &UserConfigurationFromFile{},
+		UserHash:   auth.GetUserHash(AppConfig.UserKeyPath),
+	}
 }

@@ -3,28 +3,25 @@ package docker
 import "github.com/Privado-Inc/privado/pkg/config"
 
 type containerVolumes struct {
-	licenseVolumeEnabled, sourceCodeVolumeEnabled, externalRulesVolumeEnabled bool
-	licenseVolumeHost, sourceCodeVolumeHost, externalRulesVolumeHost          string
+	userKeyVolumeEnabled, dockerKeyVolumeEnabled, sourceCodeVolumeEnabled, externalRulesVolumeEnabled bool
+	userKeyVolumeHost, dockerKeyVolumeHost, sourceCodeVolumeHost, externalRulesVolumeHost             string
 }
 
-type containerPorts struct {
-	webPortEnabled bool
-	webPortHost    int
-}
+// type containerPorts struct {
+// 	webPortEnabled bool
+// 	webPortHost    int
+// }
 
 type RunImageOption func(opts *runImageHandler)
 
 type runImageHandler struct {
-	args               []string
-	volumes            containerVolumes
-	ports              containerPorts
-	setupInterrupt     bool
-	spawnWebBrowser    bool
-	progressLoader     bool
-	duringLoadMessages []string
-	afterLoadMessages  []string
-	attachOutput       bool
-	exitErrorMessages  []string
+	args    []string
+	volumes containerVolumes
+	// ports             containerPorts
+	setupInterrupt    bool
+	spawnWebBrowser   bool
+	attachOutput      bool
+	exitErrorMessages []string
 }
 
 func newRunImageHandler(opts []RunImageOption) runImageHandler {
@@ -44,10 +41,17 @@ func OptionWithArgs(args []string) RunImageOption {
 	}
 }
 
-func OptionWithLicenseVolume(volumeHost string) RunImageOption {
+func OptionWithUserKeyVolume(volumeHost string) RunImageOption {
 	return func(rh *runImageHandler) {
-		rh.volumes.licenseVolumeEnabled = true
-		rh.volumes.licenseVolumeHost = volumeHost
+		rh.volumes.userKeyVolumeEnabled = true
+		rh.volumes.userKeyVolumeHost = volumeHost
+	}
+}
+
+func OptionWithDockerKeyVolume(volumeHost string) RunImageOption {
+	return func(rh *runImageHandler) {
+		rh.volumes.dockerKeyVolumeEnabled = true
+		rh.volumes.dockerKeyVolumeHost = volumeHost
 	}
 }
 
@@ -76,13 +80,6 @@ func OptionWithDefaultRules(useDefaultRules bool) RunImageOption {
 	}
 }
 
-func OptionWithWebPort(portHost int) RunImageOption {
-	return func(rh *runImageHandler) {
-		rh.ports.webPortEnabled = true
-		rh.ports.webPortHost = portHost
-	}
-}
-
 func OptionWithInterrupt() RunImageOption {
 	return func(rh *runImageHandler) {
 		rh.setupInterrupt = true
@@ -92,18 +89,6 @@ func OptionWithInterrupt() RunImageOption {
 func OptionWithAutoSpawnBrowser() RunImageOption {
 	return func(rh *runImageHandler) {
 		rh.spawnWebBrowser = true
-	}
-}
-
-func OptionWithProgressLoader(duringLoadMessages []string, afterLoadMessages []string) RunImageOption {
-	return func(rh *runImageHandler) {
-		rh.progressLoader = true
-		if len(duringLoadMessages) > 0 {
-			rh.duringLoadMessages = duringLoadMessages
-		}
-		if len(afterLoadMessages) > 0 {
-			rh.afterLoadMessages = afterLoadMessages
-		}
 	}
 }
 

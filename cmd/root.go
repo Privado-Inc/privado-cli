@@ -5,11 +5,10 @@ import (
 	"os"
 
 	// homedir "github.com/mitchellh/go-homedir"
-	"github.com/Privado-Inc/privado/pkg/config"
+
 	"github.com/spf13/cobra"
 )
 
-var licensePath string
 var Version = "dev"
 
 var rootCmd = &cobra.Command{
@@ -19,8 +18,6 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
-	rootCmd.PersistentFlags().StringVarP(&licensePath, "license", "l", config.AppConfig.DefaultLicensePath, "The license file to be used. Overrides the default bootstrapped license")
-
 	if err := rootCmd.Execute(); err != nil {
 		exit(fmt.Sprintln(err), true)
 	}

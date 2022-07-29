@@ -16,9 +16,7 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/moby/term"
-
 	// "github.com/docker/docker/ne"
-	"github.com/docker/go-connections/nat"
 )
 
 func getDefaultDockerClient() (*client.Client, error) {
@@ -38,23 +36,31 @@ func getBaseContainerConfig(image string) *container.Config {
 		AttachStderr: true,
 		OpenStdin:    true,
 		Tty:          true,
-		ExposedPorts: nat.PortSet{
-			nat.Port(config.AppConfig.Container.WebPort): {},
-		},
 	}
 	return config
 }
 
-func getContainerHostConfig(volumes containerVolumes, ports containerPorts) *container.HostConfig {
+func getContainerHostConfig(volumes containerVolumes) *container.HostConfig {
 	hostConfig := &container.HostConfig{}
 
-	if volumes.licenseVolumeEnabled {
+	if volumes.userKeyVolumeEnabled {
 		hostConfig.Mounts = append(
 			hostConfig.Mounts,
 			mount.Mount{
 				Type:     "bind",
-				Source:   volumes.licenseVolumeHost,
-				Target:   config.AppConfig.Container.LicenseVolumeDir,
+				Source:   volumes.userKeyVolumeHost,
+				Target:   config.AppConfig.Container.UserKeyVolumeDir,
+				ReadOnly: true,
+			},
+		)
+	}
+	if volumes.dockerKeyVolumeEnabled {
+		hostConfig.Mounts = append(
+			hostConfig.Mounts,
+			mount.Mount{
+				Type:     "bind",
+				Source:   volumes.dockerKeyVolumeHost,
+				Target:   config.AppConfig.Container.DockerKeyVolumeDir,
 				ReadOnly: true,
 			},
 		)
@@ -78,17 +84,6 @@ func getContainerHostConfig(volumes containerVolumes, ports containerPorts) *con
 				Target: config.AppConfig.Container.ExternalRulesVolumeDir,
 			},
 		)
-	}
-
-	if ports.webPortEnabled {
-		hostConfig.PortBindings = map[nat.Port][]nat.PortBinding{
-			nat.Port(config.AppConfig.Container.WebPort): {
-				{
-					HostIP:   "0.0.0.0",
-					HostPort: fmt.Sprint(ports.webPortHost),
-				},
-			},
-		}
 	}
 
 	return hostConfig
@@ -207,7 +202,7 @@ func RunImage(opts ...RunImageOption) error {
 	// Generate container configurations
 	containerConfig := getBaseContainerConfig(image)
 	containerConfig.Cmd = runOptions.args
-	hostConfig := getContainerHostConfig(runOptions.volumes, runOptions.ports)
+	hostConfig := getContainerHostConfig(runOptions.volumes)
 
 	// Create container
 	creationResponse, err := client.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
@@ -224,8 +219,6 @@ func RunImage(opts ...RunImageOption) error {
 	// always remove the container in the end
 	defer RemoveContainerForcefully(client, ctx, creationResponse.ID)
 
-	quitProgressBarChannel := make(chan bool, 1)
-
 	// Attach input/output streams with container
 	if runOptions.attachOutput || len(runOptions.exitErrorMessages) > 0 {
 		// processContainerOutput(attachStdIO, runOnMatch)
@@ -236,7 +229,6 @@ func RunImage(opts ...RunImageOption) error {
 
 		processAttachedContainerOutput(reader, runOptions.attachOutput, runOptions.exitErrorMessages, func(err string) {
 			// Error on output
-			quitProgressBarChannel <- true
 			fmt.Println("\n> Some error occurred")
 			if err != "" {
 				// reset any color from internal process
@@ -262,24 +254,10 @@ func RunImage(opts ...RunImageOption) error {
 		// All cleanup here: The process ends after this
 		// and defer functions are not executed
 		sgn := utils.RunOnCtrlC(func() {
-			quitProgressBarChannel <- true
 			fmt.Println("\n> Received interrupt signal")
 			RemoveContainerForcefully(client, ctx, creationResponse.ID)
 		})
 		defer utils.ClearSignals(sgn)
-	}
-
-	if runOptions.ports.webPortEnabled && runOptions.spawnWebBrowser {
-		completeProgressChannel := make(chan bool)
-		if runOptions.progressLoader {
-			go utils.RenderProgressSpinnerWithMessages(
-				completeProgressChannel,
-				quitProgressBarChannel,
-				runOptions.duringLoadMessages,
-				runOptions.afterLoadMessages,
-			)
-		}
-		go utils.WaitAndOpenURL(fmt.Sprintf("http://localhost:%d", runOptions.ports.webPortHost), completeProgressChannel, 6)
 	}
 
 	// Image output after this point

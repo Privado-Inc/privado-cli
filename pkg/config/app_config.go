@@ -12,13 +12,14 @@ import (
 )
 
 var AppConfig *Configuration
-var ExtConfig *ExternalConfiguration
 
 type Configuration struct {
 	HomeDirectory                    string
 	DefaultWebPort                   int
 	ConfigurationDirectory           string
-	DefaultLicensePath               string
+	UserConfigurationFilePath        string
+	UserKeyDirectory                 string
+	UserKeyPath                      string
 	PrivacyResultsPathSuffix         string
 	PrivacyReportsDirectorySuffix    string
 	PrivadoRepository                string
@@ -30,17 +31,11 @@ type Configuration struct {
 
 type ContainerConfiguration struct {
 	ImageURL               string
+	UserKeyVolumeDir       string
+	DockerKeyVolumeDir     string
 	SourceCodeVolumeDir    string
-	LicenseVolumeDir       string
 	InternalRulesVolumeDir string
 	ExternalRulesVolumeDir string
-	WebPort                string
-}
-
-type ExternalConfiguration struct {
-	GitHubAPIHost            string
-	GitHubReleasesEndpoint   string
-	GitHubReleaseDownloadURL string
 }
 
 // init function for AppConfig
@@ -48,23 +43,22 @@ func init() {
 	home, _ := homedir.Dir()
 
 	imageTag := "niagara-dev"
-	licenseFileName := "license.json"
 
 	if isDev, err := strconv.ParseBool(os.Getenv("PRIVADO_DEV")); err == nil && isDev {
 		imageTag = os.Getenv("PRIVADO_TAG")
 		if imageTag == "" {
-			imageTag = "dev"
+			imageTag = "niagara-dev"
 		}
-		licenseFileName = "license-dev.json"
 	}
 
 	AppConfig = &Configuration{
 		HomeDirectory:                    home,
 		DefaultWebPort:                   3000,
 		ConfigurationDirectory:           filepath.Join(home, ".privado"),
-		DefaultLicensePath:               filepath.Join(home, ".privado", "keys", licenseFileName),
+		UserConfigurationFilePath:        filepath.Join(home, ".privado", "config.json"),
+		UserKeyDirectory:                 filepath.Join(home, ".privado", "keys"),
+		UserKeyPath:                      filepath.Join(home, ".privado", "keys", "user.key"),
 		PrivacyResultsPathSuffix:         filepath.Join(".privado", "privacy.json"),
-		PrivacyReportsDirectorySuffix:    filepath.Join(".privado", "reports"),
 		PrivadoRepository:                "https://github.com/Privado-Inc/privado-cli",
 		PrivadoRepositoryName:            "Privado-Inc/privado-cli",
 		PrivadoRepositoryReleaseFilename: fmt.Sprintf("privado-%s-%s.tar.gz", runtime.GOOS, runtime.GOARCH),
@@ -72,19 +66,10 @@ func init() {
 		Container: &ContainerConfiguration{
 			ImageURL:               fmt.Sprintf("public.ecr.aws/privado/cli:%s", imageTag),
 			SourceCodeVolumeDir:    "/app/code",
-			LicenseVolumeDir:       "/app/keys/user.key",
 			InternalRulesVolumeDir: "/app/rules",
 			ExternalRulesVolumeDir: "/app/external-rules",
-			WebPort:                "80/tcp",
+			UserKeyVolumeDir:       "/app/keys/user.key",
+			DockerKeyVolumeDir:     "/app/keys/docker.key",
 		},
-	}
-}
-
-// init function for ExtConfig
-func init() {
-	ExtConfig = &ExternalConfiguration{
-		GitHubAPIHost:            "https://api.github.com",
-		GitHubReleasesEndpoint:   "/repos/${REPO_NAME}/releases/latest",
-		GitHubReleaseDownloadURL: "https://github.com/${REPO_NAME}/releases/download/${REPO_TAG}/${REPO_RELEASE_FILE}",
 	}
 }

@@ -7,20 +7,20 @@ assignees: ojaswa1942
 
 ---
 
-**Describe the bug**
+**Describe the Bug**
 A clear and concise description of what the bug is.
+
+**Expected Behavior**
+A clear and concise description of what you expected to happen.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1.  Specify the OS and version
+1. Specify the OS and version
 2. Specify repository link if possible
-3.  Detailed steps to reproduce the issue 
-
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+3. Detailed steps to reproduce the issue 
 
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Additional context**
+**Additional Context**
 Add any other context about the problem here.

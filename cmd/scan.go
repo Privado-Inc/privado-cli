@@ -3,6 +3,8 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Privado-Inc/privado-cli/pkg/config"
@@ -91,6 +93,11 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithExternalRulesVolume(externalRules),
 		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
 		docker.OptionWithPackageCacheVolume(config.AppConfig.M2PackageCacheDirectory),
+		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
+			{Key: "PRIVADO_USER_HASH", Value: config.UserConfig.UserHash},
+			{Key: "PRIVADO_SYNC_TO_CLOUD", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.SyncToPrivadoCloud))},
+			{Key: "PRIVADO_METRICS_ENABLED", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.MetricsEnabled))},
+		}),
 		docker.OptionWithDebug(debug),
 	)
 	if err != nil {

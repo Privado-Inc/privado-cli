@@ -16,7 +16,6 @@ import (
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/moby/term"
-	// "github.com/docker/docker/ne"
 )
 
 func getDefaultDockerClient() (*client.Client, error) {
@@ -222,6 +221,7 @@ func RunImage(opts ...RunImageOption) error {
 	// Generate container configurations
 	containerConfig := getBaseContainerConfig(image)
 	containerConfig.Cmd = runOptions.args
+	containerConfig.Env = runOptions.environmentVars
 	hostConfig := getContainerHostConfig(runOptions.volumes)
 
 	// Create container

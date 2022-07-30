@@ -14,14 +14,16 @@ type containerVolumes struct {
 	externalRulesVolumeHost, userConfigVolumeHost, packageCacheVolumeHost string
 }
 
-// [TODO]: Option to include configuration volume as core will need to edit it
-// [TODO]: Option to include env variables in container
+type EnvVar struct {
+	Key, Value string
+}
 
 type RunImageOption func(opts *runImageHandler)
 
 type runImageHandler struct {
-	args    []string
-	volumes containerVolumes
+	args            []string
+	volumes         containerVolumes
+	environmentVars []string
 	// ports             containerPorts
 	setupInterrupt    bool
 	spawnWebBrowser   bool
@@ -110,6 +112,20 @@ func OptionWithSkipDependencyDownload(skipDependencyDownload bool) RunImageOptio
 	return func(rh *runImageHandler) {
 		if skipDependencyDownload {
 			rh.args = append(rh.args, "-sdd")
+		}
+	}
+}
+
+func OptionWithEnvironmentVariables(envVars []EnvVar) RunImageOption {
+	return func(rh *runImageHandler) {
+		if len(envVars) > 0 {
+			processedEnvStrings := []string{}
+			for _, envVar := range envVars {
+				if envVar.Key != "" {
+					processedEnvStrings = append(processedEnvStrings, fmt.Sprintf("%s=%s", envVar.Key, envVar.Value))
+				}
+			}
+			rh.environmentVars = processedEnvStrings
 		}
 	}
 }

@@ -84,6 +84,9 @@ func OptionWithExternalRulesVolume(volumeHost string) RunImageOption {
 	}
 }
 
+// eventually, volumes for all packages for all languages will come here
+// unless another approach for cache is decided. Therefore, suggest to not
+// make any specific changes related to M2 package volume cache
 func OptionWithPackageCacheVolume(volumeHost string) RunImageOption {
 	return func(rh *runImageHandler) {
 		if err := os.MkdirAll(volumeHost, os.ModePerm); err == nil {
@@ -99,6 +102,14 @@ func OptionWithIgnoreDefaultRules(ignoreDefaultRules bool) RunImageOption {
 	return func(rh *runImageHandler) {
 		if ignoreDefaultRules {
 			rh.args = append(rh.args, "-i")
+		}
+	}
+}
+
+func OptionWithSkipDependencyDownload(skipDependencyDownload bool) RunImageOption {
+	return func(rh *runImageHandler) {
+		if skipDependencyDownload {
+			rh.args = append(rh.args, "-sdd")
 		}
 	}
 }

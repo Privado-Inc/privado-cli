@@ -62,7 +62,7 @@ func init() {
 		UserKeyDirectory:                 filepath.Join(home, ".privado", "keys"),
 		UserKeyPath:                      filepath.Join(home, ".privado", "keys", "user.key"),
 		M2PackageCacheDirectory:          filepath.Join(home, ".m2"),
-		PrivacyResultsPathSuffix:         filepath.Join(".privado", "privacy.json"),
+		PrivacyResultsPathSuffix:         filepath.Join(".privado", "privado.json"),
 		PrivadoRepository:                "https://github.com/Privado-Inc/privado-cli",
 		PrivadoRepositoryName:            "Privado-Inc/privado-cli",
 		PrivadoRepositoryReleaseFilename: fmt.Sprintf("privado-%s-%s.tar.gz", runtime.GOOS, runtime.GOARCH),

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/Privado-Inc/privado/pkg/auth"
 	"github.com/Privado-Inc/privado/pkg/fileutils"
@@ -62,10 +61,6 @@ func LoadUserConfiguration() {
 	// load other configs
 	// (move this to another function if these configs increases)
 	UserConfig.UserHash = auth.GetUserHash(AppConfig.UserKeyPath)
-
-	fmt.Println("> Successfully loaded configurations")
-	fmt.Println()
-	time.Sleep(AppConfig.SlowdownTime)
 }
 
 // Saves the current UserConfig.ConfigFile to the configuration file

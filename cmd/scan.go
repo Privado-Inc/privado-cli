@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 	"time"
 
 	"github.com/Privado-Inc/privado/pkg/config"
 	"github.com/Privado-Inc/privado/pkg/docker"
 	"github.com/Privado-Inc/privado/pkg/fileutils"
+	"github.com/Privado-Inc/privado/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
@@ -19,18 +21,17 @@ var scanCmd = &cobra.Command{
 
 func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().StringP("rules", "r", "", "Specifies the rule directory to be passed to privado-core for scanning. These external rules are merged with the default set of rules that Privado defines")
-
 	scanCmd.Flags().BoolP("ignore-default-rules", "i", false, "If specified, the default rules are ignored and only the specified rules (-r) are considered")
-
-	scanCmd.Flags().BoolP("overwrite", "o", false, "If specified, the warning prompt for existing scan results is disabled and any existing results are overwritten")
+	scanCmd.Flags().Bool("skip-dependency-download", false, "When specified, the engine skips downloading all locally unavailable dependencies. Skipping dependency download can yield incomplete results")
+	scanCmd.Flags().Bool("overwrite", false, "If specified, the warning prompt for existing scan results is disabled and any existing results are overwritten")
 	scanCmd.Flags().Bool("debug", false, "Enables privado-core image output in debug mode")
-	scanCmd.Flags().MarkHidden("debug")
 }
 
 func scan(cmd *cobra.Command, args []string) {
 	repository := args[0]
 	debug, _ := cmd.Flags().GetBool("debug")
-	// overwriteResults, _ := cmd.Flags().GetBool("overwrite")
+	overwriteResults, _ := cmd.Flags().GetBool("overwrite")
+	skipDependencyDownload, _ := cmd.Flags().GetBool("skip-dependency-download")
 
 	externalRules, _ := cmd.Flags().GetString("rules")
 	if externalRules != "" {
@@ -60,20 +61,20 @@ func scan(cmd *cobra.Command, args []string) {
 	}
 
 	// if overwrite flag is not specified, check for existing results
-	// if !overwriteResults {
-	// 	resultsPath := filepath.Join(utils.GetAbsolutePath(repository), config.AppConfig.PrivacyResultsPathSuffix)
-	// 	if exists, _ := utils.DoesFileExists(resultsPath); exists {
-	// 		fmt.Printf("> Scan report already exists (%s)\n", config.AppConfig.PrivacyResultsPathSuffix)
-	// 		// fmt.Println("> If you want to view or edit existing results, run 'privado load' instead")
+	if !overwriteResults {
+		resultsPath := filepath.Join(fileutils.GetAbsolutePath(repository), config.AppConfig.PrivacyResultsPathSuffix)
+		if exists, _ := fileutils.DoesFileExists(resultsPath); exists {
+			fmt.Printf("> Scan report already exists (%s)\n", config.AppConfig.PrivacyResultsPathSuffix)
+			// fmt.Println("> If you want to view or edit existing results, run 'privado load' instead")
 
-	// 		fmt.Println("\n> Rescan will overwrite existing results and progress")
-	// 		confirm, _ := utils.ShowConfirmationPrompt("Continue?")
-	// 		if !confirm {
-	// 			exit("Terminating..", false)
-	// 		}
-	// 		fmt.Println()
-	// 	}
-	// }
+			fmt.Println("\n> Rescan will overwrite existing results and progress")
+			confirm, _ := utils.ShowConfirmationPrompt("Continue?")
+			if !confirm {
+				exit("Terminating..", false)
+			}
+			fmt.Println()
+		}
+	}
 
 	// "pass -ir even when internal rules are ignored (-i)"
 	commandArgs := []string{config.AppConfig.Container.SourceCodeVolumeDir, "-ir", config.AppConfig.Container.InternalRulesVolumeDir}
@@ -88,6 +89,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithUserKeyVolume(config.AppConfig.UserKeyPath),
 		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
 		docker.OptionWithExternalRulesVolume(externalRules),
+		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
 		docker.OptionWithPackageCacheVolume(config.AppConfig.M2PackageCacheDirectory),
 		docker.OptionWithDebug(debug),
 	)

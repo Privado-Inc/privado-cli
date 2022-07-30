@@ -1,10 +1,17 @@
 package docker
 
-import "github.com/Privado-Inc/privado/pkg/config"
+import (
+	"fmt"
+	"os"
+
+	"github.com/Privado-Inc/privado/pkg/config"
+)
 
 type containerVolumes struct {
-	userKeyVolumeEnabled, dockerKeyVolumeEnabled, sourceCodeVolumeEnabled, externalRulesVolumeEnabled, userConfigVolumeEnabled bool
-	userKeyVolumeHost, dockerKeyVolumeHost, sourceCodeVolumeHost, externalRulesVolumeHost, userConfigVolumeHost                string
+	userKeyVolumeEnabled, dockerKeyVolumeEnabled, sourceCodeVolumeEnabled,
+	externalRulesVolumeEnabled, userConfigVolumeEnabled, packageCacheVolumeEnabled bool
+	userKeyVolumeHost, dockerKeyVolumeHost, sourceCodeVolumeHost,
+	externalRulesVolumeHost, userConfigVolumeHost, packageCacheVolumeHost string
 }
 
 // [TODO]: Option to include configuration volume as core will need to edit it
@@ -73,6 +80,17 @@ func OptionWithExternalRulesVolume(volumeHost string) RunImageOption {
 			rh.volumes.externalRulesVolumeEnabled = true
 			rh.volumes.externalRulesVolumeHost = volumeHost
 			rh.args = append(rh.args, "-er", config.AppConfig.Container.ExternalRulesVolumeDir)
+		}
+	}
+}
+
+func OptionWithPackageCacheVolume(volumeHost string) RunImageOption {
+	return func(rh *runImageHandler) {
+		if err := os.MkdirAll(volumeHost, os.ModePerm); err == nil {
+			rh.volumes.packageCacheVolumeEnabled = true
+			rh.volumes.packageCacheVolumeHost = volumeHost
+		} else {
+			fmt.Println("[WARN]: Could not create package cache volume on host. skipping volume mount: ", err)
 		}
 	}
 }

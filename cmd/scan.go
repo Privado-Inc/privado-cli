@@ -88,6 +88,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithUserKeyVolume(config.AppConfig.UserKeyPath),
 		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
 		docker.OptionWithExternalRulesVolume(externalRules),
+		docker.OptionWithPackageCacheVolume(config.AppConfig.M2PackageCacheDirectory),
 		docker.OptionWithDebug(debug),
 	)
 	if err != nil {

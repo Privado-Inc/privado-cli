@@ -95,6 +95,16 @@ func getContainerHostConfig(volumes containerVolumes) *container.HostConfig {
 			},
 		)
 	}
+	if volumes.packageCacheVolumeEnabled {
+		hostConfig.Mounts = append(
+			hostConfig.Mounts,
+			mount.Mount{
+				Type:   "bind",
+				Source: volumes.packageCacheVolumeHost,
+				Target: config.AppConfig.Container.M2PackageCacheVolumeDir,
+			},
+		)
+	}
 
 	return hostConfig
 }

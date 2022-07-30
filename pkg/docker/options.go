@@ -7,10 +7,8 @@ type containerVolumes struct {
 	userKeyVolumeHost, dockerKeyVolumeHost, sourceCodeVolumeHost, externalRulesVolumeHost             string
 }
 
-// type containerPorts struct {
-// 	webPortEnabled bool
-// 	webPortHost    int
-// }
+// [TODO]: Option to include configuration volume as core will need to edit it
+// [TODO]: Option to include env variables in container
 
 type RunImageOption func(opts *runImageHandler)
 
@@ -72,10 +70,10 @@ func OptionWithExternalRulesVolume(volumeHost string) RunImageOption {
 	}
 }
 
-func OptionWithDefaultRules(useDefaultRules bool) RunImageOption {
+func OptionWithIgnoreDefaultRules(ignoreDefaultRules bool) RunImageOption {
 	return func(rh *runImageHandler) {
-		if useDefaultRules {
-			rh.args = append(rh.args, "-ir", config.AppConfig.Container.InternalRulesVolumeDir)
+		if ignoreDefaultRules {
+			rh.args = append(rh.args, "-i")
 		}
 	}
 }

@@ -75,7 +75,8 @@ func scan(cmd *cobra.Command, args []string) {
 	// 	}
 	// }
 
-	commandArgs := []string{config.AppConfig.Container.SourceCodeVolumeDir}
+	// "pass -ir even when internal rules are ignored (-i)"
+	commandArgs := []string{config.AppConfig.Container.SourceCodeVolumeDir, "-ir", config.AppConfig.Container.InternalRulesVolumeDir}
 
 	fmt.Println("> Scanning directory:", fileutils.GetAbsolutePath(repository))
 	// run image with options
@@ -83,7 +84,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithArgs(commandArgs),
 		docker.OptionWithAttachedOutput(),
 		docker.OptionWithSourceVolume(fileutils.GetAbsolutePath(repository)),
-		docker.OptionWithDefaultRules(!ignoreDefaultRules),
+		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
 		docker.OptionWithExternalRulesVolume(externalRules),
 		docker.OptionWithDebug(debug),
 	)

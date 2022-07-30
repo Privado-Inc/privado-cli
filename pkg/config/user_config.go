@@ -7,17 +7,20 @@ import (
 
 	"github.com/Privado-Inc/privado-cli/pkg/auth"
 	"github.com/Privado-Inc/privado-cli/pkg/fileutils"
+	"github.com/google/uuid"
 )
 
 var UserConfig = &UserConfiguration{
 	ConfigFile: &UserConfigurationFromFile{
 		MetricsEnabled: true,
 	},
+	SessionId: uuid.NewString(),
 }
 
 type UserConfiguration struct {
 	ConfigFile *UserConfigurationFromFile
 	UserHash   string
+	SessionId  string
 }
 
 type UserConfigurationFromFile struct {

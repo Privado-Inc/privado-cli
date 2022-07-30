@@ -95,6 +95,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithPackageCacheVolume(config.AppConfig.M2PackageCacheDirectory),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
 			{Key: "PRIVADO_USER_HASH", Value: config.UserConfig.UserHash},
+			{Key: "PRIVADO_SESSION_ID", Value: config.UserConfig.SessionId},
 			{Key: "PRIVADO_SYNC_TO_CLOUD", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.SyncToPrivadoCloud))},
 			{Key: "PRIVADO_METRICS_ENABLED", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.MetricsEnabled))},
 		}),

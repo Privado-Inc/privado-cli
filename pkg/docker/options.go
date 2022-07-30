@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Privado-Inc/privado/pkg/config"
+	"github.com/Privado-Inc/privado-cli/pkg/config"
 )
 
 type containerVolumes struct {

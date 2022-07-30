@@ -2,7 +2,7 @@
 
 OS=""
 ARCH=""
-BASE_URL="https://github.com/Privado-Inc/privado/releases/download/latest/privado-"
+BASE_URL="https://github.com/Privado-Inc/privado-cli/releases/download/latest/privado-"
 
 function findOS {
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then

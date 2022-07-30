@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/Privado-Inc/privado/pkg/config"
-	"github.com/Privado-Inc/privado/pkg/utils"
+	"github.com/Privado-Inc/privado-cli/pkg/config"
+	"github.com/Privado-Inc/privado-cli/pkg/utils"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"

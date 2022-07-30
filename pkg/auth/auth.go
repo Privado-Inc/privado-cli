@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/Privado-Inc/privado/pkg/fileutils"
+	"github.com/Privado-Inc/privado-cli/pkg/fileutils"
 	"github.com/google/uuid"
 )
 

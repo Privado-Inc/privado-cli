@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Privado-Inc/privado/pkg/auth"
-	"github.com/Privado-Inc/privado/pkg/fileutils"
+	"github.com/Privado-Inc/privado-cli/pkg/auth"
+	"github.com/Privado-Inc/privado-cli/pkg/fileutils"
 )
 
 var UserConfig = &UserConfiguration{

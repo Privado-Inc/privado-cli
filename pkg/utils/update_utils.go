@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Privado-Inc/privado/pkg/config"
+	"github.com/Privado-Inc/privado-cli/pkg/config"
 	"github.com/schollz/progressbar/v3"
 )
 

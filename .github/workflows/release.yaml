@@ -48,4 +48,4 @@ jobs:
           extra_files: README.md
           asset_name: privado-${{ matrix.goos }}-${{ matrix.goarch }}
           overwrite: true
-          ldflags: "-X 'github.com/Privado-Inc/privado/cmd.Version=${{ needs.set-release-tag.outputs.tag }}'"
+          ldflags: "-X 'github.com/Privado-Inc/privado-cli/cmd.Version=${{ needs.set-release-tag.outputs.tag }}'"

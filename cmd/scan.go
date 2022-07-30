@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Privado-Inc/privado/pkg/config"
-	"github.com/Privado-Inc/privado/pkg/docker"
-	"github.com/Privado-Inc/privado/pkg/fileutils"
-	"github.com/Privado-Inc/privado/pkg/utils"
+	"github.com/Privado-Inc/privado-cli/pkg/config"
+	"github.com/Privado-Inc/privado-cli/pkg/docker"
+	"github.com/Privado-Inc/privado-cli/pkg/fileutils"
+	"github.com/Privado-Inc/privado-cli/pkg/utils"
 	"github.com/spf13/cobra"
 )
 

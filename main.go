@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/Privado-Inc/privado/cmd"
-	"github.com/Privado-Inc/privado/pkg/auth"
-	"github.com/Privado-Inc/privado/pkg/config"
+	"github.com/Privado-Inc/privado-cli/cmd"
+	"github.com/Privado-Inc/privado-cli/pkg/auth"
+	"github.com/Privado-Inc/privado-cli/pkg/config"
 )
 
 func bootstrap() {

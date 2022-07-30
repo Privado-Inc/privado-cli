@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Privado-Inc/privado/pkg/config"
+	"github.com/Privado-Inc/privado-cli/pkg/config"
 	"github.com/spf13/cobra"
 )
 

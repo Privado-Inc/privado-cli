@@ -1,4 +1,4 @@
-module github.com/Privado-Inc/privado
+module github.com/Privado-Inc/privado-cli
 
 go 1.17
 

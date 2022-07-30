@@ -3,8 +3,8 @@ package docker
 import "github.com/Privado-Inc/privado/pkg/config"
 
 type containerVolumes struct {
-	userKeyVolumeEnabled, dockerKeyVolumeEnabled, sourceCodeVolumeEnabled, externalRulesVolumeEnabled bool
-	userKeyVolumeHost, dockerKeyVolumeHost, sourceCodeVolumeHost, externalRulesVolumeHost             string
+	userKeyVolumeEnabled, dockerKeyVolumeEnabled, sourceCodeVolumeEnabled, externalRulesVolumeEnabled, userConfigVolumeEnabled bool
+	userKeyVolumeHost, dockerKeyVolumeHost, sourceCodeVolumeHost, externalRulesVolumeHost, userConfigVolumeHost                string
 }
 
 // [TODO]: Option to include configuration volume as core will need to edit it
@@ -50,6 +50,13 @@ func OptionWithDockerKeyVolume(volumeHost string) RunImageOption {
 	return func(rh *runImageHandler) {
 		rh.volumes.dockerKeyVolumeEnabled = true
 		rh.volumes.dockerKeyVolumeHost = volumeHost
+	}
+}
+
+func OptionWithUserConfigVolume(volumeHost string) RunImageOption {
+	return func(rh *runImageHandler) {
+		rh.volumes.userConfigVolumeEnabled = true
+		rh.volumes.userConfigVolumeHost = volumeHost
 	}
 }
 

@@ -33,6 +33,7 @@ type ContainerConfiguration struct {
 	ImageURL               string
 	UserKeyVolumeDir       string
 	DockerKeyVolumeDir     string
+	UserConfigVolumeDir    string
 	SourceCodeVolumeDir    string
 	InternalRulesVolumeDir string
 	ExternalRulesVolumeDir string
@@ -65,11 +66,12 @@ func init() {
 		SlowdownTime:                     600 * time.Millisecond,
 		Container: &ContainerConfiguration{
 			ImageURL:               fmt.Sprintf("public.ecr.aws/privado/cli:%s", imageTag),
+			UserKeyVolumeDir:       "/app/keys/user.key",
+			DockerKeyVolumeDir:     "/app/keys/docker.key",
+			UserConfigVolumeDir:    "/app/config/config.json",
 			SourceCodeVolumeDir:    "/app/code",
 			InternalRulesVolumeDir: "/app/rules",
 			ExternalRulesVolumeDir: "/app/external-rules",
-			UserKeyVolumeDir:       "/app/keys/user.key",
-			DockerKeyVolumeDir:     "/app/keys/docker.key",
 		},
 	}
 }

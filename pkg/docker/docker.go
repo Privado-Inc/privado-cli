@@ -65,6 +65,16 @@ func getContainerHostConfig(volumes containerVolumes) *container.HostConfig {
 			},
 		)
 	}
+	if volumes.userConfigVolumeEnabled {
+		hostConfig.Mounts = append(
+			hostConfig.Mounts,
+			mount.Mount{
+				Type:   "bind",
+				Source: volumes.userConfigVolumeHost,
+				Target: config.AppConfig.Container.UserConfigVolumeDir,
+			},
+		)
+	}
 	if volumes.sourceCodeVolumeEnabled {
 		hostConfig.Mounts = append(
 			hostConfig.Mounts,

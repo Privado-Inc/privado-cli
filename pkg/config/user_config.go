@@ -1,12 +1,20 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/Privado-Inc/privado/pkg/auth"
+	"github.com/Privado-Inc/privado/pkg/fileutils"
 )
 
-var UserConfig *UserConfiguration
+var UserConfig = &UserConfiguration{
+	ConfigFile: &UserConfigurationFromFile{
+		MetricsEnabled: true,
+	},
+}
 
 type UserConfiguration struct {
 	ConfigFile *UserConfigurationFromFile
@@ -14,22 +22,77 @@ type UserConfiguration struct {
 }
 
 type UserConfigurationFromFile struct {
-	MetricsEnabled  bool `json:"metrics"`
-	SyncToCloudView bool `json:"syncToCloudView"`
+	MetricsEnabled     bool `json:"metrics"`
+	SyncToPrivadoCloud bool `json:"syncToPrivadoCloud"`
 }
 
-// init function for UserConfig
-func init() {
-	// check for .privado
-	// check for config
-	// generate user
-	err := auth.BootstrapUserKey(AppConfig.UserKeyPath, AppConfig.UserKeyDirectory)
-	if err != nil {
-		panic(fmt.Sprintf("Fatal: cannot bootstrap user key: %s", err))
+// Bootstraps user configuration file
+// checks for and creates default configuration file if required
+func BootstrapUserConfiguration(resetConfig bool) error {
+	// check if configuration file exists
+	if !resetConfig {
+		if exists, _ := fileutils.DoesFileExists(AppConfig.UserConfigurationFilePath); exists {
+			return nil
+		}
 	}
 
-	UserConfig = &UserConfiguration{
-		ConfigFile: &UserConfigurationFromFile{},
-		UserHash:   auth.GetUserHash(AppConfig.UserKeyPath),
+	// if not, create directory and file
+	if err := os.MkdirAll(AppConfig.ConfigurationDirectory, os.ModePerm); err != nil {
+		return err
 	}
+
+	if err := SaveUserConfigurationFile(); err != nil {
+		return err
+	}
+	fmt.Println("> Generating configuration file:", AppConfig.UserConfigurationFilePath)
+
+	return nil
+}
+
+// loads all required user configuration including from file into UserConfig
+func LoadUserConfiguration() {
+	// load config from file
+	if err := LoadUserConfigurationFile(UserConfig.ConfigFile); err != nil {
+		panic(fmt.Sprint(
+			fmt.Sprintf("Fatal: cannot load user configuration (%s): %s\n\n", AppConfig.UserConfigurationFilePath, err),
+			fmt.Sprintln("To reset privado configuration, run `privado --reset-config`"),
+		))
+	}
+
+	// load other configs
+	// (move this to another function if these configs increases)
+	UserConfig.UserHash = auth.GetUserHash(AppConfig.UserKeyPath)
+
+	fmt.Println("> Successfully loaded configurations")
+	fmt.Println()
+	time.Sleep(AppConfig.SlowdownTime)
+}
+
+// Saves the current UserConfig.ConfigFile to the configuration file
+func SaveUserConfigurationFile() error {
+	configFileBytes, err := json.MarshalIndent(UserConfig.ConfigFile, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	if err := os.WriteFile(AppConfig.UserConfigurationFilePath, configFileBytes, 0644); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func LoadUserConfigurationFile(userConfig *UserConfigurationFromFile) error {
+	// read the config file
+	data, err := os.ReadFile(AppConfig.UserConfigurationFilePath)
+	if err != nil {
+		return err
+	}
+
+	// load the config file into var
+	if err := json.Unmarshal(data, userConfig); err != nil {
+		return err
+	}
+
+	return nil
 }

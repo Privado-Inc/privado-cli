@@ -94,6 +94,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
 		docker.OptionWithPackageCacheVolume(config.AppConfig.M2PackageCacheDirectory),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
+			{Key: "PRIVADO_HOST_SCAN_DIR", Value: fileutils.GetAbsolutePath(repository)},
 			{Key: "PRIVADO_USER_HASH", Value: config.UserConfig.UserHash},
 			{Key: "PRIVADO_SESSION_ID", Value: config.UserConfig.SessionId},
 			{Key: "PRIVADO_SYNC_TO_CLOUD", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.SyncToPrivadoCloud))},

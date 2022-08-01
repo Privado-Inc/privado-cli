@@ -21,6 +21,7 @@ type EnvVar struct {
 type RunImageOption func(opts *runImageHandler)
 
 type runImageHandler struct {
+	pullLatestImage bool
 	args            []string
 	volumes         containerVolumes
 	environmentVars []string
@@ -41,6 +42,12 @@ func newRunImageHandler(opts []RunImageOption) runImageHandler {
 }
 
 // Prepend option functions with "Option"
+
+func OptionWithLatestImage(pullImage bool) RunImageOption {
+	return func(rh *runImageHandler) {
+		rh.pullLatestImage = pullImage
+	}
+}
 
 func OptionWithArgs(args []string) RunImageOption {
 	return func(rh *runImageHandler) {

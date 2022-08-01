@@ -78,8 +78,10 @@ func scan(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if dockerAccessKey, err := docker.GetPrivadoDockerAccessKeyFromImage(config.AppConfig.Container.ImageURL); err != nil || dockerAccessKey == "" {
-		exit(fmt.Sprintf("Cannot find docker access key: %v \nPlease try again or raise an issue at %s", err, config.AppConfig.PrivadoRepository), true)
+	fmt.Println("> Scanning directory:", fileutils.GetAbsolutePath(repository))
+
+	if dockerAccessKey, err := docker.GetPrivadoDockerAccessKey(true); err != nil || dockerAccessKey == "" {
+		exit(fmt.Sprintf("Cannot fetch docker access key: %v \nPlease try again or raise an issue at %s", err, config.AppConfig.PrivadoRepository), true)
 	} else {
 		config.LoadUserDockerHash(dockerAccessKey)
 	}
@@ -87,9 +89,9 @@ func scan(cmd *cobra.Command, args []string) {
 	// "always pass -ir: even when internal rules are ignored (-i)"
 	commandArgs := []string{config.AppConfig.Container.SourceCodeVolumeDir, "-ir", config.AppConfig.Container.InternalRulesVolumeDir}
 
-	fmt.Println("> Scanning directory:", fileutils.GetAbsolutePath(repository))
 	// run image with options
 	err = docker.RunImage(
+		docker.OptionWithLatestImage(false), // because we already pull the image for access-key (with pullImage parameter)
 		docker.OptionWithArgs(commandArgs),
 		docker.OptionWithAttachedOutput(),
 		docker.OptionWithSourceVolume(fileutils.GetAbsolutePath(repository)),

@@ -129,7 +129,19 @@ func GetEnvsFromDockerImage(imageURL string) ([]EnvVar, error) {
 	return sanitizedEnvs, nil
 }
 
-func GetPrivadoDockerAccessKeyFromImage(imageURL string) (string, error) {
+func GetPrivadoDockerAccessKey(pullImage bool) (string, error) {
+	imageURL := config.AppConfig.Container.ImageURL
+
+	if pullImage {
+		client, err := getDefaultDockerClient()
+		if err != nil {
+			return "", err
+		}
+		if err := PullLatestImage(imageURL, client); err != nil {
+			return "", err
+		}
+	}
+
 	envs, err := GetEnvsFromDockerImage(imageURL)
 	if err != nil {
 		return "", err
@@ -248,10 +260,12 @@ func RunImage(opts ...RunImageOption) error {
 		return err
 	}
 
-	// Pull image
 	image := config.AppConfig.Container.ImageURL
-	if err := PullLatestImage(image, client); err != nil {
-		return err
+	// Pull image
+	if runOptions.pullLatestImage {
+		if err := PullLatestImage(image, client); err != nil {
+			return err
+		}
 	}
 
 	// Generate container configurations

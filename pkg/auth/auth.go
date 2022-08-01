@@ -52,18 +52,17 @@ func GetUserKey(userKeyPath string) string {
 }
 
 // Calculate user hash from key
-func CalculateUserHash(key string) string {
+func CalculateSHA256Hash(key string) string {
 	if key == "" {
 		panic("fatal: the function restricts generating hash for empty key string")
 	}
 	hashByteArray := sha256.Sum256([]byte(key))
 	return fmt.Sprintf("%x", hashByteArray[:])
-
 }
 
 // Gets the user key and returns the calculated hash for it
 func GetUserHash(userKeyPath string) string {
-	return CalculateUserHash(GetUserKey(userKeyPath))
+	return CalculateSHA256Hash(GetUserKey(userKeyPath))
 }
 
 func VerifyUserKeyFile(pathToFile string) error {

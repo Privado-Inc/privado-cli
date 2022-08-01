@@ -26,12 +26,14 @@ type Configuration struct {
 	PrivadoRepository                string
 	PrivadoRepositoryName            string
 	PrivadoRepositoryReleaseFilename string
+	PrivadoTelemeryEndpoint          string
 	SlowdownTime                     time.Duration
 	Container                        *ContainerConfiguration
 }
 
 type ContainerConfiguration struct {
 	ImageURL                string
+	DockerAccessKeyEnv      string
 	UserKeyVolumeDir        string
 	DockerKeyVolumeDir      string
 	UserConfigVolumeDir     string
@@ -69,6 +71,7 @@ func init() {
 		SlowdownTime:                     600 * time.Millisecond,
 		Container: &ContainerConfiguration{
 			ImageURL:                fmt.Sprintf("public.ecr.aws/privado/cli:%s", imageTag),
+			DockerAccessKeyEnv:      "PRIVADO_DOCKER_ACCESS_KEY",
 			UserKeyVolumeDir:        "/app/keys/user.key",
 			DockerKeyVolumeDir:      "/app/keys/docker.key",
 			UserConfigVolumeDir:     "/app/config/config.json",

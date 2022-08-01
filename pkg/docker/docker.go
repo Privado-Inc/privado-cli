@@ -108,6 +108,42 @@ func getContainerHostConfig(volumes containerVolumes) *container.HostConfig {
 	return hostConfig
 }
 
+func GetEnvsFromDockerImage(imageURL string) ([]EnvVar, error) {
+	client, err := getDefaultDockerClient()
+	if err != nil {
+		return nil, err
+	}
+
+	imageInfo, _, err := client.ImageInspectWithRaw(context.Background(), imageURL)
+	if err != nil {
+		return nil, err
+	}
+
+	sanitizedEnvs := []EnvVar{}
+
+	for _, env := range imageInfo.Config.Env {
+		x := strings.Split(env, "=")
+		sanitizedEnvs = append(sanitizedEnvs, EnvVar{Key: x[0], Value: x[1]})
+	}
+
+	return sanitizedEnvs, nil
+}
+
+func GetPrivadoDockerAccessKeyFromImage(imageURL string) (string, error) {
+	envs, err := GetEnvsFromDockerImage(imageURL)
+	if err != nil {
+		return "", err
+	}
+
+	for _, env := range envs {
+		if env.Key == config.AppConfig.Container.DockerAccessKeyEnv {
+			return env.Value, nil
+		}
+	}
+
+	return "", nil
+}
+
 func PullLatestImage(image string, client *client.Client) (err error) {
 	if client == nil {
 		client, err = getDefaultDockerClient()

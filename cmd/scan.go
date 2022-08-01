@@ -78,7 +78,13 @@ func scan(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// "pass -ir even when internal rules are ignored (-i)"
+	if dockerAccessKey, err := docker.GetPrivadoDockerAccessKeyFromImage(config.AppConfig.Container.ImageURL); err != nil || dockerAccessKey == "" {
+		exit(fmt.Sprintf("Cannot find docker access key: %v \nPlease try again or raise an issue at %s", err, config.AppConfig.PrivadoRepository), true)
+	} else {
+		config.LoadUserDockerHash(dockerAccessKey)
+	}
+
+	// "always pass -ir: even when internal rules are ignored (-i)"
 	commandArgs := []string{config.AppConfig.Container.SourceCodeVolumeDir, "-ir", config.AppConfig.Container.InternalRulesVolumeDir}
 
 	fmt.Println("> Scanning directory:", fileutils.GetAbsolutePath(repository))

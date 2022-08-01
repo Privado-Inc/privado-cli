@@ -18,9 +18,10 @@ var UserConfig = &UserConfiguration{
 }
 
 type UserConfiguration struct {
-	ConfigFile *UserConfigurationFromFile
-	UserHash   string
-	SessionId  string
+	ConfigFile       *UserConfigurationFromFile
+	UserHash         string
+	DockerAccessHash string
+	SessionId        string
 }
 
 type UserConfigurationFromFile struct {
@@ -64,6 +65,10 @@ func LoadUserConfiguration() {
 	// load other configs
 	// (move this to another function if these configs increases)
 	UserConfig.UserHash = auth.GetUserHash(AppConfig.UserKeyPath)
+}
+
+func LoadUserDockerHash(key string) {
+	UserConfig.DockerAccessHash = auth.CalculateSHA256Hash(key)
 }
 
 // Saves the current UserConfig.ConfigFile to the configuration file

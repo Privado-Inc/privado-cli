@@ -6,7 +6,6 @@ type ExternalConfiguration struct {
 	GitHubAPIHost            string
 	GitHubReleasesEndpoint   string
 	GitHubReleaseDownloadURL string
-	PrivadoTelemeryEndpoint  string
 }
 
 // init function for ExtConfig

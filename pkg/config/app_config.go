@@ -15,7 +15,6 @@ var AppConfig *Configuration
 
 type Configuration struct {
 	HomeDirectory                    string
-	DefaultWebPort                   int
 	ConfigurationDirectory           string
 	UserConfigurationFilePath        string
 	UserKeyDirectory                 string
@@ -26,7 +25,7 @@ type Configuration struct {
 	PrivadoRepository                string
 	PrivadoRepositoryName            string
 	PrivadoRepositoryReleaseFilename string
-	PrivadoTelemeryEndpoint          string
+	PrivadoTelemetryEndpoint         string
 	SlowdownTime                     time.Duration
 	Container                        *ContainerConfiguration
 }
@@ -48,17 +47,18 @@ func init() {
 	home, _ := homedir.Dir()
 
 	imageTag := "niagara-dev"
+	telemetryHost := "cli.privado.ai"
 
 	if isDev, err := strconv.ParseBool(os.Getenv("PRIVADO_DEV")); err == nil && isDev {
 		imageTag = os.Getenv("PRIVADO_TAG")
 		if imageTag == "" {
 			imageTag = "niagara-dev"
+			telemetryHost = "t.cli.privado.ai"
 		}
 	}
 
 	AppConfig = &Configuration{
 		HomeDirectory:                    home,
-		DefaultWebPort:                   3000,
 		ConfigurationDirectory:           filepath.Join(home, ".privado"),
 		UserConfigurationFilePath:        filepath.Join(home, ".privado", "config.json"),
 		UserKeyDirectory:                 filepath.Join(home, ".privado", "keys"),
@@ -68,6 +68,7 @@ func init() {
 		PrivadoRepository:                "https://github.com/Privado-Inc/privado-cli",
 		PrivadoRepositoryName:            "Privado-Inc/privado-cli",
 		PrivadoRepositoryReleaseFilename: fmt.Sprintf("privado-%s-%s.tar.gz", runtime.GOOS, runtime.GOARCH),
+		PrivadoTelemetryEndpoint:         fmt.Sprintf("https://%s/api/event?version=2", telemetryHost),
 		SlowdownTime:                     600 * time.Millisecond,
 		Container: &ContainerConfiguration{
 			ImageURL:                fmt.Sprintf("public.ecr.aws/privado/cli:%s", imageTag),

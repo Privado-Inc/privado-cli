@@ -5,20 +5,31 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/Privado-Inc/privado-cli/pkg/config"
 )
 
-type Metrics struct {
-	metricMap     map[string]interface{}
-	requestObject metricRequestObject
+// Note: current implementation is based on creating a telemetry instance
+// then update using instance methods, however, that will require
+// maintaining the instance elsewhere, which can be solved by
+// maintaining a singular telemetry instance in the package itself
+// similar to config
+
+// creating a DefaultInstance for global updates
+var DefaultInstance = InitiateTelemetryInstance()
+
+type Telemetry struct {
+	metricMap   map[string]interface{}
+	requestBody telemetryRequestBody
 }
 
-type metricRequestObject struct {
+type telemetryRequestBody struct {
 	EventType    string `json:"event_type"`
 	EventMessage string `json:"event_message"`
 	UserHash     string `json:"user_hash"`
 	SessionId    string `json:"session_id"`
+}
+
+type telemetryRequestConfig struct {
+	url, userHash, sessionId, authenticationKeyHash string
 }
 
 func isSupportedMetric(key string) bool {
@@ -36,60 +47,60 @@ func isSupportedMetric(key string) bool {
 	return false
 }
 
-func InitiateMetricsInstance() (*Metrics, error) {
-	var newMetricInstance = &Metrics{
-		requestObject: metricRequestObject{
+func InitiateTelemetryInstance() *Telemetry {
+	var newTelemetryInstance = &Telemetry{
+		requestBody: telemetryRequestBody{
 			EventType: "PRIVADO_CLI",
 		},
 	}
 
-	return newMetricInstance, nil
+	return newTelemetryInstance
 }
 
-func (m *Metrics) RecordAtomicMetric(key string, value interface{}) {
+func (t *Telemetry) RecordAtomicMetric(key string, value interface{}) {
 	if isSupportedMetric(key) {
-		m.metricMap[key] = fmt.Sprintf("%v", value)
+		t.metricMap[key] = fmt.Sprintf("%v", value)
 	}
 }
 
-func (m *Metrics) RecordArrayMetric(key string, value interface{}) {
+func (t *Telemetry) RecordArrayMetric(key string, value interface{}) {
 	// perform only if supported metric
 	if isSupportedMetric(key) {
 		// if key exists, append value, else define value
-		if val, ok := m.metricMap[key]; ok {
+		if val, ok := t.metricMap[key]; ok {
 			// if already an array, append value, else transform value into an array with both values
 			if typedVal, isArray := val.([]string); isArray {
-				m.metricMap[key] = append(typedVal, fmt.Sprintf("%v", value))
+				t.metricMap[key] = append(typedVal, fmt.Sprintf("%v", value))
 			} else {
-				m.metricMap[key] = []string{fmt.Sprintf("%v", val), fmt.Sprintf("%v", value)}
+				t.metricMap[key] = []string{fmt.Sprintf("%v", val), fmt.Sprintf("%v", value)}
 			}
 		} else {
-			m.metricMap[key] = []string{fmt.Sprintf("%v", value)}
+			t.metricMap[key] = []string{fmt.Sprintf("%v", value)}
 		}
 	}
 }
 
-func (m *Metrics) PostRecordedTelemetry(userHash, sessionId string) error {
-	m.requestObject.UserHash = userHash
-	m.requestObject.SessionId = sessionId
+func (t *Telemetry) PostRecordedTelemetry(reqConfig telemetryRequestConfig) error {
+	t.requestBody.UserHash = reqConfig.userHash
+	t.requestBody.SessionId = reqConfig.sessionId
 
-	if metricsJson, err := json.Marshal(m.metricMap); err != nil {
+	if metricsJson, err := json.Marshal(t.metricMap); err != nil {
 		return err
 	} else {
-		m.requestObject.EventMessage = string(metricsJson)
+		t.requestBody.EventMessage = string(metricsJson)
 	}
 
-	requestBody, err := json.Marshal(m.requestObject)
+	requestBody, err := json.Marshal(t.requestBody)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", config.AppConfig.PrivadoTelemetryEndpoint, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest("POST", reqConfig.url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return err
 	}
 
-	req.Header.Add("Authentication", config.UserConfig.DockerAccessHash)
+	req.Header.Add("Authentication", reqConfig.authenticationKeyHash)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {

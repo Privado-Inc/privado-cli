@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"runtime"
 )
 
 // Note: current implementation is based on creating a telemetry instance
@@ -19,6 +20,7 @@ var DefaultInstance = InitiateTelemetryInstance()
 type Telemetry struct {
 	metricMap   map[string]interface{}
 	requestBody telemetryRequestBody
+	Recorded    bool
 }
 
 type telemetryRequestBody struct {
@@ -28,8 +30,8 @@ type telemetryRequestBody struct {
 	SessionId    string `json:"session_id"`
 }
 
-type telemetryRequestConfig struct {
-	url, userHash, sessionId, authenticationKeyHash string
+type TelemetryRequestConfig struct {
+	Url, UserHash, SessionId, AuthenticationKeyHash string
 }
 
 func isSupportedMetric(key string) bool {
@@ -49,10 +51,15 @@ func isSupportedMetric(key string) bool {
 
 func InitiateTelemetryInstance() *Telemetry {
 	var newTelemetryInstance = &Telemetry{
+		metricMap: map[string]interface{}{},
 		requestBody: telemetryRequestBody{
 			EventType: "PRIVADO_CLI",
 		},
 	}
+
+	// init with default runtime metrics
+	newTelemetryInstance.RecordAtomicMetric("os", runtime.GOOS)
+	newTelemetryInstance.RecordAtomicMetric("arch", runtime.GOARCH)
 
 	return newTelemetryInstance
 }
@@ -80,11 +87,15 @@ func (t *Telemetry) RecordArrayMetric(key string, value interface{}) {
 	}
 }
 
-func (t *Telemetry) PostRecordedTelemetry(reqConfig telemetryRequestConfig) error {
-	t.requestBody.UserHash = reqConfig.userHash
-	t.requestBody.SessionId = reqConfig.sessionId
+func (t *Telemetry) GetRecordedMetrics() map[string]interface{} {
+	return t.metricMap
+}
 
-	if metricsJson, err := json.Marshal(t.metricMap); err != nil {
+func (t *Telemetry) PostRecordedTelemetry(reqConfig TelemetryRequestConfig) error {
+	t.requestBody.UserHash = reqConfig.UserHash
+	t.requestBody.SessionId = reqConfig.SessionId
+
+	if metricsJson, err := json.MarshalIndent(t.metricMap, "", "    "); err != nil {
 		return err
 	} else {
 		t.requestBody.EventMessage = string(metricsJson)
@@ -95,12 +106,13 @@ func (t *Telemetry) PostRecordedTelemetry(reqConfig telemetryRequestConfig) erro
 		return err
 	}
 
-	req, err := http.NewRequest("POST", reqConfig.url, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequest("POST", reqConfig.Url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return err
 	}
 
-	req.Header.Add("Authentication", reqConfig.authenticationKeyHash)
+	req.Header.Add("Authentication", reqConfig.AuthenticationKeyHash)
+	req.Header.Add("Content-Type", "application/json")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -111,6 +123,8 @@ func (t *Telemetry) PostRecordedTelemetry(reqConfig telemetryRequestConfig) erro
 	if res.StatusCode != 201 {
 		return fmt.Errorf("received non-ok status from telemetry: %d", res.StatusCode)
 	}
+
+	t.Recorded = true
 
 	return nil
 }

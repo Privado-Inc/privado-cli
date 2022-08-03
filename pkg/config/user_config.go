@@ -32,11 +32,16 @@ type UserConfigurationFromFile struct {
 // Bootstraps user configuration file
 // checks for and creates default configuration file if required
 func BootstrapUserConfiguration(resetConfig bool) error {
-	// check if configuration file exists
+	// check if configuration file exists (skip for reset)
 	if !resetConfig {
 		if exists, _ := fileutils.DoesFileExists(AppConfig.UserConfigurationFilePath); exists {
 			return nil
 		}
+	}
+
+	// if reset config, update session values that might be loaded
+	if resetConfig {
+
 	}
 
 	// if not, create directory and file
@@ -58,7 +63,7 @@ func LoadUserConfiguration() {
 	if err := LoadUserConfigurationFile(UserConfig.ConfigFile); err != nil {
 		panic(fmt.Sprint(
 			fmt.Sprintf("Fatal: cannot load user configuration (%s): %s\n\n", AppConfig.UserConfigurationFilePath, err),
-			fmt.Sprintln("To reset privado configuration, run `privado --reset-config`"),
+			fmt.Sprintln("To reset privado configuration, simply delete the file and we will generate a new one for you!"),
 		))
 	}
 

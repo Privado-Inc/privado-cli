@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/Privado-Inc/privado-cli/pkg/config"
 	"github.com/Privado-Inc/privado-cli/pkg/docker"
 	"github.com/Privado-Inc/privado-cli/pkg/fileutils"
+	"github.com/Privado-Inc/privado-cli/pkg/telemetry"
 	"github.com/Privado-Inc/privado-cli/pkg/utils"
 	"github.com/spf13/cobra"
 )
@@ -18,7 +20,16 @@ var scanCmd = &cobra.Command{
 	Use:   "scan <repository>",
 	Short: "Scan a codebase or repository to identify privacy issues and generate compliance reports",
 	Args:  cobra.ExactArgs(1),
-	Run:   scan,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		fmt.Println("> This is pre-run")
+
+		telemetry.DefaultInstance.RecordAtomicMetric("version", Version)
+		telemetry.DefaultInstance.RecordAtomicMetric("cmd", strings.Join(os.Args, " "))
+	},
+	Run: scan,
+	PostRun: func(cmd *cobra.Command, args []string) {
+		telemetryPostRun(nil)
+	},
 }
 
 func defineScanFlags(cmd *cobra.Command) {
@@ -67,8 +78,6 @@ func scan(cmd *cobra.Command, args []string) {
 		resultsPath := filepath.Join(fileutils.GetAbsolutePath(repository), config.AppConfig.PrivacyResultsPathSuffix)
 		if exists, _ := fileutils.DoesFileExists(resultsPath); exists {
 			fmt.Printf("> Scan report already exists (%s)\n", config.AppConfig.PrivacyResultsPathSuffix)
-			// fmt.Println("> If you want to view or edit existing results, run 'privado load' instead")
-
 			fmt.Println("\n> Rescan will overwrite existing results and progress")
 			confirm, _ := utils.ShowConfirmationPrompt("Continue?")
 			if !confirm {
@@ -102,6 +111,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
 		docker.OptionWithPackageCacheVolume(config.AppConfig.M2PackageCacheDirectory),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
+			{Key: "PRIVADO_VERSION_CLI", Value: Version},
 			{Key: "PRIVADO_HOST_SCAN_DIR", Value: fileutils.GetAbsolutePath(repository)},
 			{Key: "PRIVADO_USER_HASH", Value: config.UserConfig.UserHash},
 			{Key: "PRIVADO_SESSION_ID", Value: config.UserConfig.SessionId},

@@ -21,8 +21,6 @@ var scanCmd = &cobra.Command{
 	Short: "Scan a codebase or repository to identify privacy issues and generate compliance reports",
 	Args:  cobra.ExactArgs(1),
 	PreRun: func(cmd *cobra.Command, args []string) {
-		fmt.Println("> This is pre-run")
-
 		telemetry.DefaultInstance.RecordAtomicMetric("version", Version)
 		telemetry.DefaultInstance.RecordAtomicMetric("cmd", strings.Join(os.Args, " "))
 	},

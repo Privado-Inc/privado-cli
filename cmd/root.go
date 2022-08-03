@@ -45,7 +45,6 @@ func Execute() {
 }
 
 func telemetryPostRun(t *telemetry.Telemetry) {
-	fmt.Println("> This is post-run")
 	if t == nil {
 		t = telemetry.DefaultInstance
 	}

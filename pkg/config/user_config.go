@@ -39,9 +39,10 @@ func BootstrapUserConfiguration(resetConfig bool) error {
 		}
 	}
 
-	// if reset config, update session values that might be loaded
+	// if reset config, update session values that will be saved
 	if resetConfig {
-
+		UserConfig.ConfigFile.MetricsEnabled = true
+		UserConfig.ConfigFile.SyncToPrivadoCloud = false
 	}
 
 	// if not, create directory and file

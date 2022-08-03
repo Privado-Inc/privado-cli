@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/Privado-Inc/privado-cli/pkg/config"
+	"github.com/Privado-Inc/privado-cli/pkg/telemetry"
 	"github.com/Privado-Inc/privado-cli/pkg/utils"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -283,6 +284,7 @@ func RunImage(opts ...RunImageOption) error {
 		fmt.Println("\n> Encountered warnings:")
 		for i, warn := range creationResponse.Warnings {
 			fmt.Println(i+1, warn)
+			telemetry.DefaultInstance.RecordArrayMetric("warning", warn)
 		}
 	}
 
@@ -303,6 +305,7 @@ func RunImage(opts ...RunImageOption) error {
 			if err != "" {
 				// reset any color from internal process
 				fmt.Println("Find more details below:\n", err, "\033[0m")
+				telemetry.DefaultInstance.RecordArrayMetric("warning", err)
 			}
 			fmt.Println("\n> If this is an unexpected output, please try again or open an issue here: ", config.AppConfig.PrivadoRepository)
 			fmt.Println("> Terminating..")

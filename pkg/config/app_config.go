@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mitchellh/go-homedir"
@@ -49,11 +50,21 @@ func init() {
 	imageTag := "niagara-dev"
 	telemetryHost := "cli.privado.ai"
 
-	if isDev, err := strconv.ParseBool(os.Getenv("PRIVADO_DEV")); err == nil && isDev {
+	// if PRIVADO_DEV is set, ise developer env settings
+	isDev, _ := strconv.ParseBool(os.Getenv("PRIVADO_DEV"))
+	// if the running executable is running from the temp dir
+	// consider this to be run using "go run main.go",
+	// and use developer env settings
+	if strings.HasPrefix(os.Args[0], os.TempDir()) {
+		isDev = true
+	}
+
+	if isDev {
+		telemetryHost = "t.cli.privado.ai"
+		// if PRIVADO_TAG is set, use the specified cli image tag
 		imageTag = os.Getenv("PRIVADO_TAG")
 		if imageTag == "" {
 			imageTag = "niagara-dev"
-			telemetryHost = "t.cli.privado.ai"
 		}
 	}
 

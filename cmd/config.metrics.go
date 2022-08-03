@@ -19,11 +19,6 @@ func configMetrics(cmd *cobra.Command, args []string) {
 	enableFlag, _ := cmd.Flags().GetBool("enable")
 	disableFlag, _ := cmd.Flags().GetBool("disable")
 
-	// if both flags are specified, exit with error
-	if enableFlag && disableFlag {
-		exit("invalid input: please specify 1 flag", true)
-	}
-
 	metricsEnabledTextMap := (map[bool]string{true: "enabled", false: "disabled"})
 
 	// if no flags are specified, show the current configuration
@@ -51,6 +46,7 @@ func configMetrics(cmd *cobra.Command, args []string) {
 func init() {
 	metricsCmd.Flags().Bool("enable", false, "Enable telemetry events and performance metrics for Privado CLI")
 	metricsCmd.Flags().Bool("disable", false, "Disable telemetry events and performance metrics for Privado CLI")
+	metricsCmd.MarkFlagsMutuallyExclusive("enable", "disable")
 	// [TODO]: Find a way to keep this and privacy.md in sync
 	// metricsCmd.Flags().Bool("list", false, "List down all telemetry events and metrics used by Privado CLI")
 

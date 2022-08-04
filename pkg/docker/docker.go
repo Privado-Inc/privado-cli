@@ -182,7 +182,7 @@ func PullLatestImage(image string, client *client.Client) (err error) {
 	return nil
 }
 
-func attachContainerOutput(client *client.Client, ctx context.Context, containerId string) (*bufio.Reader, error) {
+func attachContainerOutput(client *client.Client, ctx context.Context, containerId string, attachStdOut bool) (*bufio.Reader, error) {
 	waiter, err := client.ContainerAttach(ctx, containerId, types.ContainerAttachOptions{
 		Stderr: true,
 		Stdout: true,
@@ -195,32 +195,48 @@ func attachContainerOutput(client *client.Client, ctx context.Context, container
 		return nil, err
 	}
 
-	// attach io by default for now
-	// unsure of the impact yet
-	go io.Copy(waiter.Conn, os.Stdin)
+	reader := waiter.Reader
 
-	return waiter.Reader, err
-}
-
-func processAttachedContainerOutput(reader *bufio.Reader, attachStdOut bool, outputMatchList []string, matchFn func(string)) {
 	if attachStdOut {
 		go io.Copy(os.Stdout, reader)
 		go io.Copy(os.Stderr, reader)
 	}
 
-	if len(outputMatchList) > 0 {
-		go func() {
-			for {
-				line, _ := reader.ReadString('\n')
-				for _, matchStr := range outputMatchList {
-					if strings.Contains(line, matchStr) {
-						matchFn(strings.TrimSuffix(line, "\n"))
-						return
+	// attach io by default for now
+	go io.Copy(waiter.Conn, os.Stdin)
+
+	return reader, err
+}
+
+// [TODO] Rewrite this function to call matchFn respective to messages
+// somehow maintain a map of message(s) and matchFn
+// and only call the respective one
+// handle the rest outside
+// as it is non of fn's concern
+type containerOutputProcessor struct {
+	messages []string
+	matchFn  func(string)
+}
+
+func processAttachedContainerOutput(reader *bufio.Reader, outputProcessors []containerOutputProcessor) {
+	if len(outputProcessors) <= 0 {
+		return
+	}
+
+	go func() {
+		for {
+			outputLine, _ := reader.ReadString('\n')
+			for _, outputProcessor := range outputProcessors {
+				for _, message := range outputProcessor.messages {
+					if strings.Contains(outputLine, message) {
+						processedMessage := strings.TrimSpace(strings.TrimSuffix(message, "\n"))
+						outputProcessor.matchFn(processedMessage)
 					}
 				}
+
 			}
-		}()
-	}
+		}
+	}()
 }
 
 func WaitForContainer(client *client.Client, ctx context.Context, containerId string) error {
@@ -292,25 +308,44 @@ func RunImage(opts ...RunImageOption) error {
 	defer RemoveContainerForcefully(client, ctx, creationResponse.ID)
 
 	// Attach input/output streams with container
-	if runOptions.attachOutput || len(runOptions.exitErrorMessages) > 0 {
+	containerOutputProcessors := []containerOutputProcessor{}
+	if runOptions.spawnWebBrowserOnURLMessage {
+		containerOutputProcessors = append(containerOutputProcessors, containerOutputProcessor{
+			messages: runOptions.spawnWebBrowserOnURLTriggerMessages,
+			matchFn: func(message string) {
+				url := utils.ExtractURLFromString(message)
+				if url != "" {
+					utils.OpenURLInBrowser(url)
+				}
+			},
+		})
+	}
+
+	if runOptions.exitOnError {
+		containerOutputProcessors = append(containerOutputProcessors, containerOutputProcessor{
+			messages: runOptions.exitOnErrorTriggerMessages,
+			matchFn: func(message string) {
+				fmt.Println("\n> Some error occurred")
+				if message != "" {
+					// reset any color from internal process
+					fmt.Println("Find more details below:\n", message, "\033[0m")
+					telemetry.DefaultInstance.RecordArrayMetric("warning", message)
+				}
+				fmt.Println("\n> If this is an unexpected output, please try again or open an issue here: ", config.AppConfig.PrivadoRepository)
+				fmt.Println("> Terminating..")
+				RemoveContainerForcefully(client, ctx, creationResponse.ID)
+			},
+		})
+	}
+
+	if runOptions.attachOutput || len(containerOutputProcessors) > 0 {
 		// processContainerOutput(attachStdIO, runOnMatch)
-		reader, err := attachContainerOutput(client, ctx, creationResponse.ID)
+		reader, err := attachContainerOutput(client, ctx, creationResponse.ID, runOptions.attachOutput)
 		if err != nil {
 			return err
 		}
 
-		processAttachedContainerOutput(reader, runOptions.attachOutput, runOptions.exitErrorMessages, func(err string) {
-			// Error on output
-			fmt.Println("\n> Some error occurred")
-			if err != "" {
-				// reset any color from internal process
-				fmt.Println("Find more details below:\n", err, "\033[0m")
-				telemetry.DefaultInstance.RecordArrayMetric("warning", err)
-			}
-			fmt.Println("\n> If this is an unexpected output, please try again or open an issue here: ", config.AppConfig.PrivadoRepository)
-			fmt.Println("> Terminating..")
-			RemoveContainerForcefully(client, ctx, creationResponse.ID)
-		})
+		processAttachedContainerOutput(reader, containerOutputProcessors)
 	}
 
 	// Start container

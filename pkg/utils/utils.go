@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"regexp"
 	"runtime"
 	"strings"
 	"syscall"
@@ -38,7 +39,7 @@ func OpenURLInBrowser(url string) {
 	// in case we cannot automatically open due to
 	// unknown OS or an error, print
 	fmt.Println("\n> Unable to open browser")
-	fmt.Println("> Open the following URL to view results:", url)
+	fmt.Println("> Kindly open the following URL to continue:", url)
 }
 
 // Ignores all error and waits for URL to be responsive
@@ -125,6 +126,16 @@ func RenderProgressSpinnerWithMessages(complete, quit chan bool, loadMessages, a
 			time.Sleep(150 * time.Millisecond)
 		}
 	}
+}
+
+func ExtractURLFromString(str string) string {
+	re := regexp.MustCompile(`([(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*))`)
+	match := re.FindStringSubmatch(str)
+	if len(match) > 1 {
+		return match[1]
+	}
+
+	return ""
 }
 
 func ShowConfirmationPrompt(msg string) (bool, error) {

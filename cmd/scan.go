@@ -117,6 +117,9 @@ func scan(cmd *cobra.Command, args []string) {
 			{Key: "PRIVADO_METRICS_ENABLED", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.MetricsEnabled))},
 		}),
 		docker.OptionWithDebug(debug),
+		// docker.OptionWithAutoSpawnBrowserOnURLMessages([]string{
+		// 	"> Continue to view results on:",
+		// }),
 	)
 	if err != nil {
 		exit(fmt.Sprintf("Received error: %s", err), true)

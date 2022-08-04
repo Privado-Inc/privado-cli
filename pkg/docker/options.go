@@ -21,15 +21,16 @@ type EnvVar struct {
 type RunImageOption func(opts *runImageHandler)
 
 type runImageHandler struct {
-	pullLatestImage bool
-	args            []string
-	volumes         containerVolumes
-	environmentVars []string
-	// ports             containerPorts
-	setupInterrupt    bool
-	spawnWebBrowser   bool
-	attachOutput      bool
-	exitErrorMessages []string
+	pullLatestImage                     bool
+	args                                []string
+	volumes                             containerVolumes
+	environmentVars                     []string
+	setupInterrupt                      bool
+	attachOutput                        bool
+	spawnWebBrowserOnURLMessage         bool
+	spawnWebBrowserOnURLTriggerMessages []string
+	exitOnError                         bool
+	exitOnErrorTriggerMessages          []string
 }
 
 func newRunImageHandler(opts []RunImageOption) runImageHandler {
@@ -143,21 +144,27 @@ func OptionWithInterrupt() RunImageOption {
 	}
 }
 
-func OptionWithAutoSpawnBrowser() RunImageOption {
+func OptionWithAttachedOutput() RunImageOption {
 	return func(rh *runImageHandler) {
-		rh.spawnWebBrowser = true
+		rh.attachOutput = true
+	}
+}
+
+// listens for these message (we use strings.Contains)
+// and spawns a browser with url in the message
+// the messagePrefix must contain a URL for autospawn
+// or this is silently ignored
+func OptionWithAutoSpawnBrowserOnURLMessages(messages []string) RunImageOption {
+	return func(rh *runImageHandler) {
+		rh.spawnWebBrowserOnURLMessage = true
+		rh.spawnWebBrowserOnURLTriggerMessages = messages
 	}
 }
 
 func OptionWithExitErrorMessages(messages []string) RunImageOption {
 	return func(rh *runImageHandler) {
-		rh.exitErrorMessages = messages
-	}
-}
-
-func OptionWithAttachedOutput() RunImageOption {
-	return func(rh *runImageHandler) {
-		rh.attachOutput = true
+		rh.exitOnError = true
+		rh.exitOnErrorTriggerMessages = messages
 	}
 }
 

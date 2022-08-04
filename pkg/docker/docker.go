@@ -291,6 +291,8 @@ func RunImage(opts ...RunImageOption) error {
 	containerConfig.Env = runOptions.environmentVars
 	hostConfig := getContainerHostConfig(runOptions.volumes)
 
+	telemetry.DefaultInstance.RecordAtomicMetric("dockerCmd", strings.Join(containerConfig.Cmd, " "))
+
 	// Create container
 	creationResponse, err := client.ContainerCreate(ctx, containerConfig, hostConfig, nil, nil, "")
 	if err != nil {

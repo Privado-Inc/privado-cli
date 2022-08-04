@@ -40,6 +40,7 @@ func isSupportedMetric(key string) bool {
 		"os",
 		"arch",
 		"cmd",
+		"dockerCmd",
 		"version",
 		"warning",
 		"error":

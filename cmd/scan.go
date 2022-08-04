@@ -100,7 +100,6 @@ func scan(cmd *cobra.Command, args []string) {
 		config.AppConfig.Container.SourceCodeVolumeDir,
 		"-ic",
 		config.AppConfig.Container.InternalRulesVolumeDir,
-		fmt.Sprintf("-Dlog4j2.configurationFile=%s", config.AppConfig.Container.LogConfigVolumeDir),
 	}
 
 	// run image with options

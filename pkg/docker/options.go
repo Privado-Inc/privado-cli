@@ -181,7 +181,7 @@ func OptionWithDebug(isDebug bool) RunImageOption {
 		// currently only enable output in debug mode
 		if isDebug {
 			rh.attachOutput = true
-			rh.args = append(rh.args, "-Dlog4j2.debug")
+			rh.args = append(rh.args, fmt.Sprintf("-Dlog4j2.configurationFile=%s", config.AppConfig.Container.LogConfigVolumeDir))
 		}
 	}
 }

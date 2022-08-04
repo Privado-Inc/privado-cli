@@ -124,9 +124,10 @@ func scan(cmd *cobra.Command, args []string) {
 			{Key: "PRIVADO_SYNC_TO_CLOUD", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.SyncToPrivadoCloud))},
 			{Key: "PRIVADO_METRICS_ENABLED", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.MetricsEnabled))},
 		}),
-		// docker.OptionWithAutoSpawnBrowserOnURLMessages([]string{
-		// 	"> Continue to view results on:",
-		// }),
+		docker.OptionWithAutoSpawnBrowserOnURLMessages([]string{
+			"> Continue to view results on:",
+		}),
+		docker.OptionWithInterrupt(),
 	)
 	if err != nil {
 		exit(fmt.Sprintf("Received error: %s", err), true)

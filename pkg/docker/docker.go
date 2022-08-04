@@ -19,6 +19,11 @@ import (
 	"github.com/moby/term"
 )
 
+type containerOutputProcessor struct {
+	messages []string
+	matchFn  func(string)
+}
+
 func getDefaultDockerClient() (*client.Client, error) {
 	client, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
@@ -182,7 +187,7 @@ func PullLatestImage(image string, client *client.Client) (err error) {
 	return nil
 }
 
-func attachContainerOutput(client *client.Client, ctx context.Context, containerId string, attachStdOut bool) (*bufio.Reader, error) {
+func attachContainerOutput(client *client.Client, ctx context.Context, containerId string) (*bufio.Reader, error) {
 	waiter, err := client.ContainerAttach(ctx, containerId, types.ContainerAttachOptions{
 		Stderr: true,
 		Stdout: true,
@@ -194,31 +199,21 @@ func attachContainerOutput(client *client.Client, ctx context.Context, container
 	if err != nil {
 		return nil, err
 	}
-
-	reader := waiter.Reader
-
-	if attachStdOut {
-		go io.Copy(os.Stdout, reader)
-		go io.Copy(os.Stderr, reader)
-	}
-
-	// attach io by default for now
+	// attach stdin by default for now
 	go io.Copy(waiter.Conn, os.Stdin)
 
-	return reader, err
+	return waiter.Reader, err
 }
 
-// [TODO] Rewrite this function to call matchFn respective to messages
-// somehow maintain a map of message(s) and matchFn
-// and only call the respective one
-// handle the rest outside
-// as it is non of fn's concern
-type containerOutputProcessor struct {
-	messages []string
-	matchFn  func(string)
-}
+func processAttachedContainerOutput(reader *bufio.Reader, attachStdOut bool, outputProcessors []containerOutputProcessor) {
+	// noticed we are missing output due to
+	// this kind of usage
+	// rather print
+	// if attachStdOut {
+	// 	go io.Copy(os.Stdout, reader)
+	// 	go io.Copy(os.Stderr, reader)
+	// }
 
-func processAttachedContainerOutput(reader *bufio.Reader, outputProcessors []containerOutputProcessor) {
 	if len(outputProcessors) <= 0 {
 		return
 	}
@@ -226,15 +221,25 @@ func processAttachedContainerOutput(reader *bufio.Reader, outputProcessors []con
 	go func() {
 		for {
 			outputLine, _ := reader.ReadString('\n')
-			for _, outputProcessor := range outputProcessors {
-				for _, message := range outputProcessor.messages {
-					if strings.Contains(outputLine, message) {
-						processedMessage := strings.TrimSpace(strings.TrimSuffix(message, "\n"))
-						outputProcessor.matchFn(processedMessage)
-					}
-				}
-
+			if attachStdOut {
+				fmt.Print(outputLine)
 			}
+
+			// process each line in parallel goroutines so output
+			// does not get blocked and we do not skip anything in
+			// either approach of getting stdout (copy, print)
+			// also, this is efficient
+			go func(outputLine string) {
+				for _, outputProcessor := range outputProcessors {
+					for _, message := range outputProcessor.messages {
+						if strings.Contains(outputLine, message) {
+							processedLine := strings.TrimSpace(strings.TrimSuffix(outputLine, "\n"))
+							outputProcessor.matchFn(processedLine)
+						}
+					}
+
+				}
+			}(outputLine)
 		}
 	}()
 }
@@ -341,13 +346,12 @@ func RunImage(opts ...RunImageOption) error {
 	}
 
 	if runOptions.attachOutput || len(containerOutputProcessors) > 0 {
-		// processContainerOutput(attachStdIO, runOnMatch)
-		reader, err := attachContainerOutput(client, ctx, creationResponse.ID, runOptions.attachOutput)
+		reader, err := attachContainerOutput(client, ctx, creationResponse.ID)
 		if err != nil {
 			return err
 		}
 
-		processAttachedContainerOutput(reader, containerOutputProcessors)
+		processAttachedContainerOutput(reader, runOptions.attachOutput, containerOutputProcessors)
 	}
 
 	// Start container
@@ -365,6 +369,7 @@ func RunImage(opts ...RunImageOption) error {
 		// and defer functions are not executed
 		sgn := utils.RunOnCtrlC(func() {
 			fmt.Println("\n> Received interrupt signal")
+			fmt.Println("> Terminating..")
 			RemoveContainerForcefully(client, ctx, creationResponse.ID)
 		})
 		defer utils.ClearSignals(sgn)

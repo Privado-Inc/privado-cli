@@ -31,9 +31,10 @@ var scanCmd = &cobra.Command{
 }
 
 func defineScanFlags(cmd *cobra.Command) {
-	scanCmd.Flags().StringP("rules", "r", "", "Specifies the rule directory to be passed to privado-core for scanning. These external rules are merged with the default set of rules that Privado defines")
+	scanCmd.Flags().StringP("config", "c", "", "Specifies the config (with rules) directory to be passed to privado-core for scanning. These external rules and configurations are merged with the default set that Privado defines")
 	scanCmd.Flags().BoolP("ignore-default-rules", "i", false, "If specified, the default rules are ignored and only the specified rules (-r) are considered")
 	scanCmd.Flags().Bool("skip-dependency-download", false, "When specified, the engine skips downloading all locally unavailable dependencies. Skipping dependency download can yield incomplete results")
+	scanCmd.Flags().Bool("disable-deduplication", false, "When specified, the engine does not remove duplicate and subset dataflows. This option is useful if you wish to review all flows (including duplicates) manually")
 	scanCmd.Flags().Bool("overwrite", false, "If specified, the warning prompt for existing scan results is disabled and any existing results are overwritten")
 	scanCmd.Flags().Bool("debug", false, "Enables privado-core image output in debug mode")
 }
@@ -43,21 +44,22 @@ func scan(cmd *cobra.Command, args []string) {
 	debug, _ := cmd.Flags().GetBool("debug")
 	overwriteResults, _ := cmd.Flags().GetBool("overwrite")
 	skipDependencyDownload, _ := cmd.Flags().GetBool("skip-dependency-download")
+	disableDeduplication, _ := cmd.Flags().GetBool("disable-deduplication")
 
-	externalRules, _ := cmd.Flags().GetString("rules")
+	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
 		externalRules = fileutils.GetAbsolutePath(externalRules)
 		externalRulesExists, _ := fileutils.DoesFileExists(externalRules)
 		if !externalRulesExists {
-			exit(fmt.Sprintf("Could not validate the rules directory: %s", externalRules), true)
+			exit(fmt.Sprintf("Could not validate the config directory: %s", externalRules), true)
 		}
 	}
 
 	ignoreDefaultRules, _ := cmd.Flags().GetBool("ignore-default-rules")
 	if ignoreDefaultRules && externalRules == "" {
 		exit(fmt.Sprint(
-			"Default rules cannot be ignored without any external rules.\n",
-			"You can specify your own rules using the `-r` option.\n\n",
+			"Default rules cannot be ignored without any external config.\n",
+			"You can specify your own rules and config using the `-c or --config` option.\n\n",
 			"For more info, run: 'privado help'\n",
 		), true)
 	}
@@ -76,7 +78,7 @@ func scan(cmd *cobra.Command, args []string) {
 		resultsPath := filepath.Join(fileutils.GetAbsolutePath(repository), config.AppConfig.PrivacyResultsPathSuffix)
 		if exists, _ := fileutils.DoesFileExists(resultsPath); exists {
 			fmt.Printf("> Scan report already exists (%s)\n", config.AppConfig.PrivacyResultsPathSuffix)
-			fmt.Println("\n> Rescan will overwrite existing results and progress")
+			fmt.Println("\n> Rescan will overwrite existing results")
 			confirm, _ := utils.ShowConfirmationPrompt("Continue?")
 			if !confirm {
 				exit("Terminating..", false)
@@ -93,8 +95,13 @@ func scan(cmd *cobra.Command, args []string) {
 		config.LoadUserDockerHash(dockerAccessKey)
 	}
 
-	// "always pass -ir: even when internal rules are ignored (-i)"
-	commandArgs := []string{config.AppConfig.Container.SourceCodeVolumeDir, "-ir", config.AppConfig.Container.InternalRulesVolumeDir}
+	// "always pass -ic: even when internal rules are ignored (-i)"
+	commandArgs := []string{
+		config.AppConfig.Container.SourceCodeVolumeDir,
+		"-ic",
+		config.AppConfig.Container.InternalRulesVolumeDir,
+		fmt.Sprintf("-Dlog4j2.configurationFile=%s", config.AppConfig.Container.LogConfigVolumeDir),
+	}
 
 	// run image with options
 	err = docker.RunImage(
@@ -104,10 +111,12 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithSourceVolume(fileutils.GetAbsolutePath(repository)),
 		docker.OptionWithUserConfigVolume(config.AppConfig.UserConfigurationFilePath),
 		docker.OptionWithUserKeyVolume(config.AppConfig.UserKeyPath),
-		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
-		docker.OptionWithExternalRulesVolume(externalRules),
-		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
 		docker.OptionWithPackageCacheVolume(config.AppConfig.M2PackageCacheDirectory),
+		docker.OptionWithExternalRulesVolume(externalRules),
+		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
+		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
+		docker.OptionWithDisabledDeduplication(disableDeduplication),
+		docker.OptionWithDebug(debug),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
 			{Key: "PRIVADO_VERSION_CLI", Value: Version},
 			{Key: "PRIVADO_HOST_SCAN_DIR", Value: fileutils.GetAbsolutePath(repository)},
@@ -116,7 +125,6 @@ func scan(cmd *cobra.Command, args []string) {
 			{Key: "PRIVADO_SYNC_TO_CLOUD", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.SyncToPrivadoCloud))},
 			{Key: "PRIVADO_METRICS_ENABLED", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.MetricsEnabled))},
 		}),
-		docker.OptionWithDebug(debug),
 		// docker.OptionWithAutoSpawnBrowserOnURLMessages([]string{
 		// 	"> Continue to view results on:",
 		// }),

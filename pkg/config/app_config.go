@@ -37,6 +37,7 @@ type ContainerConfiguration struct {
 	UserKeyVolumeDir        string
 	DockerKeyVolumeDir      string
 	UserConfigVolumeDir     string
+	LogConfigVolumeDir      string
 	SourceCodeVolumeDir     string
 	InternalRulesVolumeDir  string
 	ExternalRulesVolumeDir  string
@@ -87,6 +88,7 @@ func init() {
 			UserKeyVolumeDir:        "/app/keys/user.key",
 			DockerKeyVolumeDir:      "/app/keys/docker.key",
 			UserConfigVolumeDir:     "/app/config/config.json",
+			LogConfigVolumeDir:      "/app/config/log4j2.xml",
 			SourceCodeVolumeDir:     "/app/code",
 			InternalRulesVolumeDir:  "/app/rules",
 			ExternalRulesVolumeDir:  "/app/external-rules",

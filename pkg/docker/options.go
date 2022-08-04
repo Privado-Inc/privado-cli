@@ -89,7 +89,7 @@ func OptionWithExternalRulesVolume(volumeHost string) RunImageOption {
 		if volumeHost != "" {
 			rh.volumes.externalRulesVolumeEnabled = true
 			rh.volumes.externalRulesVolumeHost = volumeHost
-			rh.args = append(rh.args, "-er", config.AppConfig.Container.ExternalRulesVolumeDir)
+			rh.args = append(rh.args, "-ec", config.AppConfig.Container.ExternalRulesVolumeDir)
 		}
 	}
 }
@@ -120,6 +120,14 @@ func OptionWithSkipDependencyDownload(skipDependencyDownload bool) RunImageOptio
 	return func(rh *runImageHandler) {
 		if skipDependencyDownload {
 			rh.args = append(rh.args, "-sdd")
+		}
+	}
+}
+
+func OptionWithDisabledDeduplication(disableDeduplication bool) RunImageOption {
+	return func(rh *runImageHandler) {
+		if disableDeduplication {
+			rh.args = append(rh.args, "-dd")
 		}
 	}
 }
@@ -173,7 +181,7 @@ func OptionWithDebug(isDebug bool) RunImageOption {
 		// currently only enable output in debug mode
 		if isDebug {
 			rh.attachOutput = true
-			rh.args = append(rh.args, "--debug")
+			rh.args = append(rh.args, "-Dlog4j2.debug")
 		}
 	}
 }

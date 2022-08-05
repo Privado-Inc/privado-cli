@@ -49,7 +49,7 @@ func init() {
 	home, _ := homedir.Dir()
 
 	imageTag := "niagara-dev"
-	telemetryHost := "cli.privado.ai"
+	telemetryHost := "t.cli.privado.ai"
 
 	// if PRIVADO_DEV is set, ise developer env settings
 	isDev, _ := strconv.ParseBool(os.Getenv("PRIVADO_DEV"))

@@ -14,37 +14,35 @@ jobs:
       release: ${{ steps.checkRelease.outputs.makeRelease }}
     steps: 
       - uses: actions/checkout@v2
-      - run: git log --oneline --ancestry-path --no-abbrev-commit ${{ github.event.before }}..${{ github.event.after }} | cat
       - id: checkRelease
         run: |
           echo "Testing criteria: > Run if a tag is pushed to main"
+          RELEASE_BRANCH="main"
           LATEST_TAG=$(git describe --tags --abbrev=0)
           LATEST_TAG_SHA=$(git rev-parse $(git describe --tags --abbrev=0))
-
-          echo before ${{ github.event.before }} 
-          echo after ${{ github.event.after }}        
-
-          LATEST_TAG_SHA_IN_DIFF=$(git log --oneline --ancestry-path --no-abbrev-commit ${{ github.event.before }}..${{ github.event.after }} | grep $LATEST_TAG_SHA )
-          
-          # ensure that pipeline is only triggered on ALLOWED_RELEASE_BRANCHES
-          ALLOWED_RELEASE_BRANCHES=( "main" )
+          BRANCH_CONTAINS_LATEST_TAG=$(git branch $RELEASE_BRANCH --contains $LATEST_TAG | cat)
+          LATEST_RELEASED_TAG=$(curl --silent "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
           # set default output
           echo "::set-output name=makeRelease::false"
 
-          for branch in "${ALLOWED_RELEASE_BRANCHES[@]}"
-          do
-            echo  "Loop step: ${{ github.sha }} $(git rev-parse origin/$branch)"
+          echo "Check if $RELEASE_BRANCH contains tag $LATEST_TAG"
+          if [[ $BRANCH_CONTAINS_LATEST_TAG != "" ]]
+          then
+            echo "Found branch to contain $LATEST_TAG"
+            echo "::set-output name=makeRelease::true"
+          else
+            echo "Tagged commit not yet part of release branch, skipping.."
+          fi
 
-            echo "Check if $branch contains tag $LATEST_TAG"
-            if [[ $LATEST_TAG_SHA_IN_DIFF != "" ]]
-            then
-              echo "Found latest tag sha $LATEST_TAG_SHA to exist in diff"
-              echo "::set-output name=makeRelease::true"
-              break
-            fi
-          done
-  
+          echo "Check if tag $LATEST_TAG is already released"
+          if [[ $LATEST_RELEASED_TAG == $LATEST_TAG ]]
+          then
+            echo "Found latest tag $LATEST_TAG to be already released"
+            echo "Release criteria failed"
+            echo "::set-output name=makeRelease::false"
+          fi
+
   release:
     name: Create Release
     runs-on: ubuntu-latest

@@ -36,7 +36,7 @@ jobs:
           fi
 
           echo "Check if tag $LATEST_TAG is already released"
-          if [[ $LATEST_RELEASED_TAG == $LATEST_TAG ]]
+          if [[ $LATEST_TAG != "" && $LATEST_RELEASED_TAG == $LATEST_TAG ]]
           then
             echo "Found latest tag $LATEST_TAG to be already released"
             echo "Release criteria failed"

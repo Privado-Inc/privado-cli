@@ -6,12 +6,14 @@ on:
 
 jobs:
   check-release-condition:
-    name: Check if satisfies release criteria
+    name: Check release criteria
     runs-on: ubuntu-latest
     outputs:
       release: ${{ steps.checkRelease.outputs.makeRelease }}
     steps: 
       - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - run: echo ${{ github.sha }}
       - id: checkRelease
         run: |
@@ -22,8 +24,8 @@ jobs:
 
           for branch in "${ALLOWED_BRANCHES[@]}"
           do
-            echo  "Loop step: ${{ github.sha }} $(git rev-parse $branch)"
-            if [[ ${{ github.sha }} == $(git rev-parse $branch) ]]
+            echo  "Loop step: ${{ github.sha }} $(git rev-parse origin/$branch)"
+            if [[ ${{ github.sha }} == $(git rev-parse origin/$branch) ]]
             then
               echo "::set-output name=makeRelease::true"
               break

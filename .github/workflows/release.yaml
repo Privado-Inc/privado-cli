@@ -2,15 +2,25 @@ name: Release Privado CLI
 
 on:
   push:
-    branches: [master, main, feat/actions]
     tags: ["*"]
 
 jobs:
+  check-release-condition:
+    name: Check if satisfies release criteria
+    runs-on: ubuntu-latest
+    steps: 
+      - uses: actions/checkout@v2
+      - run: echo ${{ github.ref }}
+
+
+
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    if: (github.ref == 'refs/heads/master') || (github.ref == 'refs/heads/feat/actions')
     outputs:
       tag: ${{ steps.settag.outputs.tag }}
+      # makeRelease: ${{ steps.settag.outputs.release }}
     steps:
       - uses: actions/checkout@v2
       - name: Set release tag
@@ -22,6 +32,7 @@ jobs:
             PRIVADO_RELEASE_TAG=$(git describe --tags --abbrev=0)
           fi
           echo "Final Tag: $PRIVADO_RELEASE_TAG"
+
           echo "PRIVADO_RELEASE_TAG=$(echo -n $PRIVADO_RELEASE_TAG)" >> $GITHUB_ENV
           echo "::set-output name=tag::$PRIVADO_RELEASE_TAG"
       - name: Create Release
@@ -40,6 +51,7 @@ jobs:
   release-assets:
     name: Attach Release Assets
     runs-on: ubuntu-20.04
+    if: github.ref == 'refs/heads/main' || github.ref == 'feat/actions'
     needs: release
     strategy:
       matrix:

@@ -2,6 +2,8 @@ name: Release Privado CLI
 
 on:
   push:
+    branches:
+      - main
     tags: ["*"]
 
 jobs:
@@ -12,21 +14,32 @@ jobs:
       release: ${{ steps.checkRelease.outputs.makeRelease }}
     steps: 
       - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - run: echo ${{ github.sha }}
+      - run: git log --oneline --ancestry-path --no-abbrev-commit ${{ github.event.before }}..${{ github.event.after }} | cat
       - id: checkRelease
         run: |
-          ALLOWED_BRANCHES=( "main" "master" "feat/actions" )
+          echo "Testing criteria: > Run if a tag is pushed to main"
+          LATEST_TAG=$(git describe --tags --abbrev=0)
+          LATEST_TAG_SHA=$(git rev-parse $(git describe --tags --abbrev=0))
+
+          echo before ${{ github.event.before }} 
+          echo after ${{ github.event.after }}        
+
+          LATEST_TAG_SHA_IN_DIFF=$(git log --oneline --ancestry-path --no-abbrev-commit ${{ github.event.before }}..${{ github.event.after }} | grep $LATEST_TAG_SHA )
+          
+          # ensure that pipeline is only triggered on ALLOWED_RELEASE_BRANCHES
+          ALLOWED_RELEASE_BRANCHES=( "main" )
 
           # set default output
           echo "::set-output name=makeRelease::false"
 
-          for branch in "${ALLOWED_BRANCHES[@]}"
+          for branch in "${ALLOWED_RELEASE_BRANCHES[@]}"
           do
             echo  "Loop step: ${{ github.sha }} $(git rev-parse origin/$branch)"
-            if [[ ${{ github.sha }} == $(git rev-parse origin/$branch) ]]
+
+            echo "Check if $branch contains tag $LATEST_TAG"
+            if [[ $LATEST_TAG_SHA_IN_DIFF != "" ]]
             then
+              echo "Found latest tag sha $LATEST_TAG_SHA to exist in diff"
               echo "::set-output name=makeRelease::true"
               break
             fi
@@ -39,7 +52,6 @@ jobs:
     if: ${{ needs.check-release-condition.outputs.release == 'true' }}
     outputs:
       tag: ${{ steps.settag.outputs.tag }}
-      # makeRelease: ${{ steps.settag.outputs.release }}
     steps:
       - uses: actions/checkout@v2
 

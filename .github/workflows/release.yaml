@@ -8,24 +8,43 @@ jobs:
   check-release-condition:
     name: Check if satisfies release criteria
     runs-on: ubuntu-latest
+    outputs:
+      release: ${{ steps.checkRelease.outputs.makeRelease }}
     steps: 
       - uses: actions/checkout@v2
-      - run: echo ${{ github.ref }}
+      - run: echo ${{ github.sha }}
+      - id: checkRelease
+        run: |
+          ALLOWED_BRANCHES=( "main" "master" "feat/actions" )
 
+          # set default output
+          echo "::set-output name=makeRelease::false"
 
-
+          for branch in "${ALLOWED_BRANCHES[@]}"
+          do
+            echo  "Loop step: ${{ github.sha }} $(git rev-parse $branch)"
+            if [[ ${{ github.sha }} == $(git rev-parse $branch) ]]
+            then
+              echo "::set-output name=makeRelease::true"
+              break
+            fi
+          done
+  
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    if: (github.ref == 'refs/heads/master') || (github.ref == 'refs/heads/feat/actions')
+    needs: check-release-condition
+    if: ${{ needs.check-release-condition.outputs.release == 'true' }}
     outputs:
       tag: ${{ steps.settag.outputs.tag }}
       # makeRelease: ${{ steps.settag.outputs.release }}
     steps:
       - uses: actions/checkout@v2
+
       - name: Set release tag
         id: settag
         run: |
+          echo ${{ needs.check-release-condition.outputs.release }}
           PRIVADO_RELEASE_TAG=$GITHUB_REF_NAME
           if [[ $PRIVADO_RELEASE_TAG = "latest" ]] 
           then
@@ -35,6 +54,7 @@ jobs:
 
           echo "PRIVADO_RELEASE_TAG=$(echo -n $PRIVADO_RELEASE_TAG)" >> $GITHUB_ENV
           echo "::set-output name=tag::$PRIVADO_RELEASE_TAG"
+
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -51,7 +71,6 @@ jobs:
   release-assets:
     name: Attach Release Assets
     runs-on: ubuntu-20.04
-    if: github.ref == 'refs/heads/main' || github.ref == 'feat/actions'
     needs: release
     strategy:
       matrix:

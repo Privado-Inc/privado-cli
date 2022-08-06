@@ -12,11 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release: ${{ steps.checkRelease.outputs.makeRelease }}
+      tag: ${{ steps.checkRelease.outputs.releaseTag }}
     steps: 
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      - run: echo $(git describe --tags --abbrev=0)
       - id: checkRelease
         run: |
           echo "Testing criteria: > Run if a tag is pushed to main"
@@ -27,6 +27,7 @@ jobs:
           LATEST_RELEASED_TAG=$(curl --silent "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
 
           # set default output
+          echo "::set-output name=releaseTag::$LATEST_TAG"
           echo "::set-output name=makeRelease::false"
 
           echo "Check if $RELEASE_BRANCH contains tag $LATEST_TAG"
@@ -60,11 +61,10 @@ jobs:
         id: settag
         run: |
           echo ${{ needs.check-release-condition.outputs.release }}
-          PRIVADO_RELEASE_TAG=$GITHUB_REF_NAME
-          if [[ $PRIVADO_RELEASE_TAG == "latest" ]] 
-          then
-            PRIVADO_RELEASE_TAG=$(git describe --tags --abbrev=0)
-          fi
+          PRIVADO_RELEASE_TAG=${{ needs.check-release-condition.outputs.tag }}
+          
+          # any additional changes to tag from criteria ti be done here
+
           echo "Final Tag: $PRIVADO_RELEASE_TAG"
 
           echo "PRIVADO_RELEASE_TAG=$(echo -n $PRIVADO_RELEASE_TAG)" >> $GITHUB_ENV
@@ -80,8 +80,6 @@ jobs:
           release_name: Privado CLI ${{ env.PRIVADO_RELEASE_TAG }}
           draft: false
           prerelease: false
-
-
 
   release-assets:
     name: Attach Release Assets
@@ -107,7 +105,7 @@ jobs:
           project_path: "./"
           binary_name: "privado"
           goversion: "https://dl.google.com/go/go1.18.4.linux-amd64.tar.gz"
-          extra_files: README.md
+          extra_files: README.md install.sh 
           asset_name: privado-${{ matrix.goos }}-${{ matrix.goarch }}
           overwrite: true
           ldflags: "-X 'github.com/Privado-Inc/privado-cli/cmd.Version=${{ needs.release.outputs.tag }}'"

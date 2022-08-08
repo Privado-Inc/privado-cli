@@ -60,6 +60,7 @@ jobs:
     if: ${{ needs.check-release-condition.outputs.release == 'true' }}
     outputs:
       tag: ${{ steps.settag.outputs.tag }}
+      releaseURL: ${{ steps.create_release.outputs.url }}
     steps:
       - uses: actions/checkout@v2
 
@@ -78,12 +79,13 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.PRIVADO_RELEASE_TAG }}
-          release_name: Privado CLI ${{ env.PRIVADO_RELEASE_TAG }}
+          name: Privado CLI ${{ env.PRIVADO_RELEASE_TAG }}
+          generate_release_notes: true
           draft: false
           prerelease: false
 
@@ -115,3 +117,4 @@ jobs:
           asset_name: privado-${{ matrix.goos }}-${{ matrix.goarch }}
           overwrite: true
           ldflags: "-X 'github.com/Privado-Inc/privado-cli/cmd.Version=${{ needs.release.outputs.tag }}'"
+      - run: echo "Release Successful > ${{ needs.release.outputs.releaseURL }}"

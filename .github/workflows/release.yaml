@@ -88,6 +88,9 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: false
+          files: |
+            README.md 
+            install.sh 
 
   release-assets:
     name: Attach Release Assets
@@ -113,7 +116,6 @@ jobs:
           project_path: "./"
           binary_name: "privado"
           goversion: "https://dl.google.com/go/go1.18.4.linux-amd64.tar.gz"
-          extra_files: README.md install.sh 
           asset_name: privado-${{ matrix.goos }}-${{ matrix.goarch }}
           overwrite: true
           ldflags: "-X 'github.com/Privado-Inc/privado-cli/cmd.Version=${{ needs.release.outputs.tag }}'"

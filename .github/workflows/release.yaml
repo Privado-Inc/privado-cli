@@ -19,26 +19,30 @@ jobs:
           fetch-depth: 0
       - id: checkRelease
         run: |
-          echo "Testing criteria: > Run if a tag is pushed to main"
+          echo "Testing criteria: > Release if a new tag is pushed to main"
           RELEASE_BRANCH="main"
           LATEST_TAG=$(git describe --tags --abbrev=0)
           LATEST_TAG_SHA=$(git rev-parse $(git describe --tags --abbrev=0))
           BRANCH_CONTAINS_LATEST_TAG=$(git branch $RELEASE_BRANCH --contains $LATEST_TAG | cat)
-          LATEST_RELEASED_TAG=$(curl --silent "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          LATEST_RELEASED_TAG=$(curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          
+          echo "LATEST_TAG $LATEST_TAG"
+          echo "BRANCH_CONTAINS $BRANCH_CONTAINS_LATEST_TAG"
+          echo "LATEST_RELEASED_TAG $LATEST_RELEASED_TAG"
 
           # set default output
           echo "::set-output name=releaseTag::$LATEST_TAG"
           echo "::set-output name=makeRelease::false"
 
-          echo "Check if $RELEASE_BRANCH contains tag $LATEST_TAG"
+          echo "Check if RELEASE_BRANCH $RELEASE_BRANCH contains latest tag $LATEST_TAG"
           if [[ $BRANCH_CONTAINS_LATEST_TAG != "" ]]
           then
-            echo "Found branch to contain $LATEST_TAG"
+            echo "Found branch to contain LATEST_TAG $LATEST_TAG"
             echo "::set-output name=makeRelease::true"
           else
             echo "Tagged commit not yet part of release branch, skipping.."
           fi
-
+          
           echo "Check if tag $LATEST_TAG is already released"
           if [[ $LATEST_TAG != "" && $LATEST_RELEASED_TAG == $LATEST_TAG ]]
           then
@@ -46,6 +50,8 @@ jobs:
             echo "Release criteria failed"
             echo "::set-output name=makeRelease::false"
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   release:
     name: Create Release

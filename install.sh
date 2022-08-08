@@ -2,7 +2,8 @@
 
 OS=""
 ARCH=""
-BASE_URL="https://github.com/Privado-Inc/privado-cli/releases/download/latest/privado-"
+BASE_URL="https://github.com/Privado-Inc/privado-cli/releases/latest/download/privado-"
+REPO_URL="https://github.com/Privado-Inc/privado-cli/"
 
 function findOS {
     if [[ "$OSTYPE" == "linux-gnu"* ]]; then
@@ -31,18 +32,22 @@ function findArch {
 
 function downloadAndInstallLatestVersion {
     if [[ "$OS" == "" || "$ARCH" == "" ]]; then
-        echo "Unsupported OS or Arch type. Please visit https://privado.ai/cli for more information."
+        echo "Unsupported OS or Arch type. Please visit $REPO_URL for more information."
         exit 1
     fi
 
     mkdir -p $HOME/.privado/bin
     if [[ "$OS" == "windows" ]]; then
+	echo "Downloading binary:"
 	curl -L "$BASE_URL$OS-$ARCH.zip" -o /tmp/privado-$OS-$ARCH.zip
+	echo "Downloading binary MD5:"
 	curl -L "$BASE_URL$OS-$ARCH.zip.md5" -o /tmp/privado-$OS-$ARCH.zip.md5
 	MD5_ACTUAL=$(certutil -hashfile /tmp/privado-$OS-$ARCH.zip MD5 | head -n2 | tail -n1)
 	MD5_EXPECTED=$(cat /tmp/privado-$OS-$ARCH.zip.md5)
     else
+	echo "Downloading binary:"
 	curl -L "$BASE_URL$OS-$ARCH.tar.gz" -o /tmp/privado-$OS-$ARCH.tar.gz
+	echo "Downloading binary MD5:"
 	curl -L "$BASE_URL$OS-$ARCH.tar.gz.md5" -o /tmp/privado-$OS-$ARCH.tar.gz.md5
 	if [[ "$OS" == "linux" ]]; then
 		MD5_ACTUAL=$(md5sum /tmp/privado-$OS-$ARCH.tar.gz | awk '{print $1}')
@@ -86,7 +91,7 @@ function downloadAndInstallLatestVersion {
         	cat $DEFAULT_PROFILE_PATH | grep -q "/.privado" || echo "export PATH=\$PATH:$HOME/.privado/bin" >> $DEFAULT_PROFILE_PATH
     	fi
 	
-		echo "Installation is complete! Please open a new session and use the privado cli tool"
+		echo "Installation is complete! Please open a new session and run 'privado' to use Privado CLI"
     fi
 }
 

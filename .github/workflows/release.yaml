@@ -23,7 +23,7 @@ jobs:
           RELEASE_BRANCH="main"
           LATEST_TAG=$(git describe --tags --abbrev=0)
           LATEST_TAG_SHA=$(git rev-parse $(git describe --tags --abbrev=0))
-          BRANCH_CONTAINS_LATEST_TAG=$(git branch $RELEASE_BRANCH --contains $LATEST_TAG | cat)
+          BRANCH_CONTAINS_LATEST_TAG=$(git branch -a origin/$RELEASE_BRANCH --contains $LATEST_TAG | cat)
           LATEST_RELEASED_TAG=$(curl --silent -H "Accept: application/vnd.github+json" -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/repos/${{ github.repository }}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
           
           echo "LATEST_TAG $LATEST_TAG"

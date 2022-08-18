@@ -100,13 +100,23 @@ func getContainerHostConfig(volumes containerVolumes) *container.HostConfig {
 			},
 		)
 	}
-	if volumes.packageCacheVolumeEnabled {
+	if volumes.m2PackageCacheVolumeEnabled {
 		hostConfig.Mounts = append(
 			hostConfig.Mounts,
 			mount.Mount{
 				Type:   "bind",
-				Source: volumes.packageCacheVolumeHost,
+				Source: volumes.m2PackageCacheVolumeHost,
 				Target: config.AppConfig.Container.M2PackageCacheVolumeDir,
+			},
+		)
+	}
+	if volumes.gradlePackageCacheVolumeEnabled {
+		hostConfig.Mounts = append(
+			hostConfig.Mounts,
+			mount.Mount{
+				Type:   "bind",
+				Source: volumes.gradlePackageCacheVolumeHost,
+				Target: config.AppConfig.Container.GradlePackageCacheVolumeDir,
 			},
 		)
 	}

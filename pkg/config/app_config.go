@@ -53,9 +53,9 @@ func init() {
 	home, _ := homedir.Dir()
 
 	imageTag := "niagara-dev"
-	telemetryHost := "t.cli.privado.ai"
+	telemetryHost := "cli.privado.ai"
 
-	// if PRIVADO_DEV is set, ise developer env settings
+	// if PRIVADO_DEV is set, use developer env settings
 	isDev, _ := strconv.ParseBool(os.Getenv("PRIVADO_DEV"))
 	// if the running executable is running from the temp dir
 	// consider this to be run using "go run main.go",

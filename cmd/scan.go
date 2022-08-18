@@ -110,7 +110,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithSourceVolume(fileutils.GetAbsolutePath(repository)),
 		docker.OptionWithUserConfigVolume(config.AppConfig.UserConfigurationFilePath),
 		docker.OptionWithUserKeyVolume(config.AppConfig.UserKeyPath),
-		docker.OptionWithPackageCacheVolume(config.AppConfig.M2PackageCacheDirectory),
+		docker.OptionWithPackageCacheVolumes(),
 		docker.OptionWithExternalRulesVolume(externalRules),
 		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
 		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),

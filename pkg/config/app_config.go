@@ -17,6 +17,7 @@ var AppConfig *Configuration
 
 type Configuration struct {
 	HomeDirectory                    string
+	CacheDirectory                   string
 	ConfigurationDirectory           string
 	UserConfigurationFilePath        string
 	UserKeyDirectory                 string
@@ -34,16 +35,17 @@ type Configuration struct {
 }
 
 type ContainerConfiguration struct {
-	ImageURL                string
-	DockerAccessKeyEnv      string
-	UserKeyVolumeDir        string
-	DockerKeyVolumeDir      string
-	UserConfigVolumeDir     string
-	LogConfigVolumeDir      string
-	SourceCodeVolumeDir     string
-	InternalRulesVolumeDir  string
-	ExternalRulesVolumeDir  string
-	M2PackageCacheVolumeDir string
+	ImageURL                    string
+	DockerAccessKeyEnv          string
+	UserKeyVolumeDir            string
+	DockerKeyVolumeDir          string
+	UserConfigVolumeDir         string
+	LogConfigVolumeDir          string
+	SourceCodeVolumeDir         string
+	InternalRulesVolumeDir      string
+	ExternalRulesVolumeDir      string
+	M2PackageCacheVolumeDir     string
+	GradlePackageCacheVolumeDir string
 }
 
 // init function for AppConfig
@@ -86,18 +88,32 @@ func init() {
 		PrivadoTelemetryEndpoint:         fmt.Sprintf("https://%s/api/event?version=2", telemetryHost),
 		SlowdownTime:                     600 * time.Millisecond,
 		Container: &ContainerConfiguration{
-			ImageURL:                fmt.Sprintf("public.ecr.aws/privado/cli:%s", imageTag),
-			DockerAccessKeyEnv:      "PRIVADO_DOCKER_ACCESS_KEY",
-			UserKeyVolumeDir:        "/app/keys/user.key",
-			DockerKeyVolumeDir:      "/app/keys/docker.key",
-			UserConfigVolumeDir:     "/app/config/config.json",
-			LogConfigVolumeDir:      "/app/config/log4j2.xml",
-			SourceCodeVolumeDir:     "/app/code",
-			InternalRulesVolumeDir:  "/app/rules",
-			ExternalRulesVolumeDir:  "/app/external-rules",
-			M2PackageCacheVolumeDir: "/root/.m2",
+			ImageURL:                    fmt.Sprintf("public.ecr.aws/privado/cli:%s", imageTag),
+			DockerAccessKeyEnv:          "PRIVADO_DOCKER_ACCESS_KEY",
+			UserKeyVolumeDir:            "/app/keys/user.key",
+			DockerKeyVolumeDir:          "/app/keys/docker.key",
+			UserConfigVolumeDir:         "/app/config/config.json",
+			LogConfigVolumeDir:          "/app/config/log4j2.xml",
+			SourceCodeVolumeDir:         "/app/code",
+			InternalRulesVolumeDir:      "/app/rules",
+			ExternalRulesVolumeDir:      "/app/external-rules",
+			M2PackageCacheVolumeDir:     "/root/.m2",
+			GradlePackageCacheVolumeDir: "/root/.gradle",
 		},
 	}
+
+	privadoCacheDir, _ := initPrivadoCacheDirectory()
+	AppConfig.CacheDirectory = privadoCacheDir
+}
+
+// returns existing privado cache directory
+// if not available - creates one and returns
+func initPrivadoCacheDirectory() (string, error) {
+	cacheDir := getPrivadoCacheDirectory()
+	if cacheDir != "" {
+		return cacheDir, nil
+	}
+	return createPrivadoCacheDirectory()
 }
 
 func createPrivadoCacheDirectory() (string, error) {
@@ -145,24 +161,32 @@ func GetPackageCacheDirectory(packageManager string) (string, error) {
 		packageCacheDir = AppConfig.GradleCacheDirectoryName
 	}
 
-	cacheDir := getPrivadoCacheDirectory()
+	cacheDir := AppConfig.CacheDirectory
 	if cacheDir != "" {
-		return filepath.Join(cacheDir, packageCacheDir), nil
+		if exists, err := fileutils.DoesFileExists(filepath.Join(cacheDir, packageCacheDir)); err != nil {
+			return "", err
+		} else if exists {
+			return filepath.Join(cacheDir, packageCacheDir), nil
+		}
 	}
 
 	home, _ := homedir.Dir()
-	defaultPackageLocation := filepath.Join(home, packageCacheDir)
-	if exists, err := fileutils.DoesFileExists(defaultPackageLocation); err != nil {
+	defaultPackageCacheLocation := filepath.Join(home, packageCacheDir)
+	if exists, err := fileutils.DoesFileExists(defaultPackageCacheLocation); err != nil {
 		return "", err
 	} else if exists {
 		// if default package location exists, use that (~/.m2, ~/.gradle)
-		return defaultPackageLocation, nil
+		return defaultPackageCacheLocation, nil
 	} else {
-		// if default location does not exist, create Privado Cache and use that one
-		cacheDir, err := createPrivadoCacheDirectory()
-		if err != nil {
-			return "", err
+		// if default location does not exist, create dir in PrivadoCache and use that one
+		// if cacheDir is empty, try creating again
+		if cacheDir == "" {
+			cacheDir, err = createPrivadoCacheDirectory()
+			if err != nil {
+				return "", err
+			}
 		}
+
 		location := filepath.Join(cacheDir, packageCacheDir)
 		if err := os.MkdirAll(location, os.ModePerm); err != nil {
 			return "", err

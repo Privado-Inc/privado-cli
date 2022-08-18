@@ -104,7 +104,6 @@ func OptionWithPackageCacheVolumes() RunImageOption {
 	return func(rh *runImageHandler) {
 		for _, pkg := range []string{"m2", "gradle"} {
 			if hostVolumeForCache, err := config.GetPackageCacheDirectory(pkg); err == nil {
-				fmt.Println("Details: ", pkg, " ", hostVolumeForCache)
 				if pkg == "m2" {
 					rh.volumes.m2PackageCacheVolumeEnabled = true
 					rh.volumes.m2PackageCacheVolumeHost = hostVolumeForCache

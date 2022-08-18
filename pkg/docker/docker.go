@@ -100,13 +100,23 @@ func getContainerHostConfig(volumes containerVolumes) *container.HostConfig {
 			},
 		)
 	}
-	if volumes.packageCacheVolumeEnabled {
+	if volumes.m2PackageCacheVolumeEnabled {
 		hostConfig.Mounts = append(
 			hostConfig.Mounts,
 			mount.Mount{
 				Type:   "bind",
-				Source: volumes.packageCacheVolumeHost,
+				Source: volumes.m2PackageCacheVolumeHost,
 				Target: config.AppConfig.Container.M2PackageCacheVolumeDir,
+			},
+		)
+	}
+	if volumes.gradlePackageCacheVolumeEnabled {
+		hostConfig.Mounts = append(
+			hostConfig.Mounts,
+			mount.Mount{
+				Type:   "bind",
+				Source: volumes.gradlePackageCacheVolumeHost,
+				Target: config.AppConfig.Container.GradlePackageCacheVolumeDir,
 			},
 		)
 	}
@@ -320,9 +330,14 @@ func RunImage(opts ...RunImageOption) error {
 		containerOutputProcessors = append(containerOutputProcessors, containerOutputProcessor{
 			messages: runOptions.spawnWebBrowserOnURLTriggerMessages,
 			matchFn: func(message string) {
+				telemetry.DefaultInstance.RecordAtomicMetric("didReceiveCloudLinkMessage", true)
 				url := utils.ExtractURLFromString(message)
 				if url != "" {
-					utils.OpenURLInBrowser(url)
+					telemetry.DefaultInstance.RecordAtomicMetric("didParseCloudLink", true)
+					if err := utils.OpenURLInBrowser(url); err != nil {
+						telemetry.DefaultInstance.RecordArrayMetric("error", err)
+					}
+					telemetry.DefaultInstance.RecordAtomicMetric("didAutoSpawnBrowser", err == nil)
 				}
 			},
 		})

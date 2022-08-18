@@ -16,8 +16,9 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
-func OpenURLInBrowser(url string) {
+func OpenURLInBrowser(url string) error {
 	var cmd *exec.Cmd
+	errMsg := ""
 
 	switch runtime.GOOS {
 	case "linux":
@@ -28,11 +29,14 @@ func OpenURLInBrowser(url string) {
 		cmd = exec.Command("open", url)
 	default:
 		cmd = nil
+		errMsg = fmt.Sprintln("Autospawn browser: Unidentified OS " + runtime.GOOS)
 	}
 
 	if cmd != nil {
 		if err := cmd.Start(); err == nil {
-			return
+			return nil
+		} else {
+			errMsg = errMsg + fmt.Sprintf("Could not execute cmd %s: %v", cmd, err)
 		}
 	}
 
@@ -40,6 +44,7 @@ func OpenURLInBrowser(url string) {
 	// unknown OS or an error, print
 	fmt.Println("\n> Unable to open browser")
 	fmt.Println("> Kindly open the following URL to continue:", url)
+	return fmt.Errorf(errMsg)
 }
 
 // Ignores all error and waits for URL to be responsive

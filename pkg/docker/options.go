@@ -2,16 +2,19 @@ package docker
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/Privado-Inc/privado-cli/pkg/config"
+	"github.com/Privado-Inc/privado-cli/pkg/telemetry"
 )
 
 type containerVolumes struct {
 	userKeyVolumeEnabled, dockerKeyVolumeEnabled, sourceCodeVolumeEnabled,
-	externalRulesVolumeEnabled, userConfigVolumeEnabled, packageCacheVolumeEnabled bool
+	externalRulesVolumeEnabled, userConfigVolumeEnabled, m2PackageCacheVolumeEnabled,
+	gradlePackageCacheVolumeEnabled bool
+
 	userKeyVolumeHost, dockerKeyVolumeHost, sourceCodeVolumeHost,
-	externalRulesVolumeHost, userConfigVolumeHost, packageCacheVolumeHost string
+	externalRulesVolumeHost, userConfigVolumeHost, m2PackageCacheVolumeHost,
+	gradlePackageCacheVolumeHost string
 }
 
 type EnvVar struct {
@@ -97,13 +100,23 @@ func OptionWithExternalRulesVolume(volumeHost string) RunImageOption {
 // eventually, volumes for all packages for all languages will come here
 // unless another approach for cache is decided. Therefore, suggest to not
 // make any specific changes related to M2 package volume cache
-func OptionWithPackageCacheVolume(volumeHost string) RunImageOption {
+func OptionWithPackageCacheVolumes() RunImageOption {
 	return func(rh *runImageHandler) {
-		if err := os.MkdirAll(volumeHost, os.ModePerm); err == nil {
-			rh.volumes.packageCacheVolumeEnabled = true
-			rh.volumes.packageCacheVolumeHost = volumeHost
-		} else {
-			fmt.Println("[WARN]: Could not create package cache volume on host. skipping volume mount: ", err)
+		for _, pkg := range []string{"m2", "gradle"} {
+			if hostVolumeForCache, err := config.GetPackageCacheDirectory(pkg); err == nil {
+				fmt.Println("Details: ", pkg, " ", hostVolumeForCache)
+				if pkg == "m2" {
+					rh.volumes.m2PackageCacheVolumeEnabled = true
+					rh.volumes.m2PackageCacheVolumeHost = hostVolumeForCache
+				} else if pkg == "gradle" {
+					rh.volumes.gradlePackageCacheVolumeEnabled = true
+					rh.volumes.gradlePackageCacheVolumeHost = hostVolumeForCache
+				}
+			} else {
+				warningMsg := fmt.Sprintf("Could not get package cache directory for pkg %s. skipping volume mount: %v", pkg, err)
+				fmt.Println("[WARN]: ", warningMsg)
+				telemetry.DefaultInstance.RecordArrayMetric("warning", warningMsg)
+			}
 		}
 	}
 }
@@ -142,6 +155,7 @@ func OptionWithEnvironmentVariables(envVars []EnvVar) RunImageOption {
 				}
 			}
 			rh.environmentVars = processedEnvStrings
+			telemetry.DefaultInstance.RecordAtomicMetric("env", processedEnvStrings)
 		}
 	}
 }

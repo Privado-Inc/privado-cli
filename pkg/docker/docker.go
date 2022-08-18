@@ -320,9 +320,14 @@ func RunImage(opts ...RunImageOption) error {
 		containerOutputProcessors = append(containerOutputProcessors, containerOutputProcessor{
 			messages: runOptions.spawnWebBrowserOnURLTriggerMessages,
 			matchFn: func(message string) {
+				telemetry.DefaultInstance.RecordAtomicMetric("didReceiveCloudLinkMessage", true)
 				url := utils.ExtractURLFromString(message)
 				if url != "" {
-					utils.OpenURLInBrowser(url)
+					telemetry.DefaultInstance.RecordAtomicMetric("didParseCloudLink", true)
+					if err := utils.OpenURLInBrowser(url); err != nil {
+						telemetry.DefaultInstance.RecordArrayMetric("error", err)
+					}
+					telemetry.DefaultInstance.RecordAtomicMetric("didAutoSpawnBrowser", err == nil)
 				}
 			},
 		})

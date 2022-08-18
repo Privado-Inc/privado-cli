@@ -42,6 +42,10 @@ func isSupportedMetric(key string) bool {
 		"cmd",
 		"dockerCmd",
 		"version",
+		"config",
+		"didReceiveCloudLinkMessage",
+		"didParseCloudLink",
+		"didAutoSpawnBrowser",
 		"warning",
 		"error":
 		return true

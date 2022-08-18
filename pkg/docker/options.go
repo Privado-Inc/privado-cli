@@ -155,6 +155,7 @@ func OptionWithEnvironmentVariables(envVars []EnvVar) RunImageOption {
 				}
 			}
 			rh.environmentVars = processedEnvStrings
+			telemetry.DefaultInstance.RecordAtomicMetric("env", processedEnvStrings)
 		}
 	}
 }

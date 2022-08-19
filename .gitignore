@@ -12,3 +12,6 @@ privado-license.json
 
 
 .DS_Store
+.vscode
+
+LICENSE_SOURCE_PRETEXT.md

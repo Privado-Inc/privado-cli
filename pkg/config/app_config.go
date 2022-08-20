@@ -74,7 +74,7 @@ type ContainerConfiguration struct {
 func init() {
 	home, _ := homedir.Dir()
 
-	imageTag := "niagara-dev"
+	imageTag := "latest"
 	telemetryHost := "cli.privado.ai"
 
 	// if PRIVADO_DEV is set, use developer env settings
@@ -91,7 +91,7 @@ func init() {
 		// if PRIVADO_TAG is set, use the specified cli image tag
 		imageTag = os.Getenv("PRIVADO_TAG")
 		if imageTag == "" {
-			imageTag = "niagara-dev"
+			imageTag = "dev"
 		}
 	}
 
@@ -110,7 +110,7 @@ func init() {
 		PrivadoTelemetryEndpoint:         fmt.Sprintf("https://%s/api/event?version=2", telemetryHost),
 		SlowdownTime:                     600 * time.Millisecond,
 		Container: &ContainerConfiguration{
-			ImageURL:                    fmt.Sprintf("public.ecr.aws/privado/cli:%s", imageTag),
+			ImageURL:                    fmt.Sprintf("public.ecr.aws/privado/privado:%s", imageTag),
 			DockerAccessKeyEnv:          "PRIVADO_DOCKER_ACCESS_KEY",
 			UserKeyVolumeDir:            "/app/keys/user.key",
 			DockerKeyVolumeDir:          "/app/keys/docker.key",

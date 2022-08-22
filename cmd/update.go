@@ -1,24 +1,24 @@
 /**
  * This file is part of Privado OSS.
- * 
+ *
  * Privado is an open source static code analysis tool to discover data flows in the code.
  * Copyright (C) 2022 Privado, Inc.
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>. 
- * 
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  * For more information, contact support@privado.ai
- * 
+ *
  */
 
 package cmd
@@ -99,7 +99,7 @@ func update(cmd *cobra.Command, args []string) {
 	}
 
 	// check for appropriate permissions
-	hasPerm, err := fileutils.HasWritePermissionToFile(currentExecPath)
+	hasPerm, err := fileutils.HasWritePermissionToFileNew(currentExecPath)
 	if err != nil {
 		exit(fmt.Sprintf("Could not open executable for write: %s", err), true)
 	}
@@ -142,6 +142,7 @@ func update(cmd *cobra.Command, args []string) {
 	if err != nil {
 		exit(fmt.Sprint("Could not download release asset: ", githubReleaseDownloadURL), true)
 	}
+	fmt.Println()
 	fmt.Println("Downloaded release asset:", githubReleaseDownloadURL)
 	time.Sleep(config.AppConfig.SlowdownTime)
 
@@ -150,7 +151,7 @@ func update(cmd *cobra.Command, args []string) {
 	fmt.Println("Extracting release asset..")
 	err = fileutils.ExtractTarGzFile(downloadedFilePath, temporaryDirectory)
 	if err != nil {
-		exit(fmt.Sprint("Could not extract release asset: ", githubReleaseDownloadURL, err), true)
+		exit(fmt.Sprintf("Could not extract release asset: %s: %v", downloadedFilePath, err), true)
 	}
 
 	fmt.Println("Extracted release asset:", temporaryDirectory)

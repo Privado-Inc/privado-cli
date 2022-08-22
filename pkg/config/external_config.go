@@ -35,6 +35,6 @@ func init() {
 	ExtConfig = &ExternalConfiguration{
 		GitHubAPIHost:            "https://api.github.com",
 		GitHubReleasesEndpoint:   "/repos/${REPO_NAME}/releases/latest",
-		GitHubReleaseDownloadURL: "https://github.com/${REPO_NAME}/releases/download/${REPO_TAG}/${REPO_RELEASE_FILE}",
+		GitHubReleaseDownloadURL: "https://github.com/${REPO_NAME}/releases/${REPO_TAG}/download/${REPO_RELEASE_FILE}",
 	}
 }

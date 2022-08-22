@@ -32,6 +32,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/codeclysm/extract/v3"
 )
@@ -105,6 +106,8 @@ func GetPathToCurrentBinary() (string, error) {
 	return resolvedFilePath, nil
 }
 
+// yields error on linux systems after upgrades
+// Could not open executable for write: open privado-cli/privado: text file busy
 func HasWritePermissionToFile(filePath string) (bool, error) {
 	file, err := os.OpenFile(filePath, os.O_RDWR, 0744)
 	if err != nil {
@@ -114,6 +117,18 @@ func HasWritePermissionToFile(filePath string) (bool, error) {
 		return false, err
 	}
 	defer file.Close()
+
+	return true, nil
+}
+
+func HasWritePermissionToFileNew(filePath string) (bool, error) {
+	err := syscall.Access(filePath, uint32(os.O_RDWR))
+	if err != nil {
+		if errors.Is(err, fs.ErrPermission) {
+			return false, nil
+		}
+		return false, err
+	}
 
 	return true, nil
 }
@@ -133,6 +148,12 @@ func ExtractTarGzFile(sourceFile, target string) error {
 	return nil
 }
 
+// os.Rename panics with "invalid cross-device link"
+// for cases where the source is on a different volume
+// or if the source volume is masked like in some
+// linux systems and hence we attempt to perform
+// copy+delete to replicate a move operation
+// with added backup fallbacks
 func SafeMoveFile(source, target string, showLogs bool) (err error) {
 	// Resolve symlinks and use actual path for critical operation
 	if source, err = filepath.EvalSymlinks(source); err != nil {
@@ -150,10 +171,10 @@ func SafeMoveFile(source, target string, showLogs bool) (err error) {
 	// if file exists, make a backup and remove
 	// file will always exist in case of updates, check to support generic usage
 	if fileExists {
+		backupTargetFile := filepath.Join(filepath.Dir(source), fmt.Sprintf("%s-backup", filepath.Base(source)))
 		if showLogs {
-			fmt.Printf("> Creating backup of existing file (%s)\n", source)
+			fmt.Printf("> Creating backup of existing file (%s)\n", backupTargetFile)
 		}
-		backupTargetFile := filepath.Dir(source) + filepath.Base(source) + "-backup"
 		if err = CopyFile(target, backupTargetFile); err != nil {
 			return err
 		}
@@ -175,18 +196,29 @@ func SafeMoveFile(source, target string, showLogs bool) (err error) {
 		}()
 	}
 
-	err = os.Rename(source, target)
+	err = CopyFile(source, target)
 	if err != nil {
 		// if file existed initially, place it back
+		if showLogs {
+			fmt.Println("> Failed to move file:\n", err)
+		}
+
 		if fileExists {
 			if showLogs {
-				fmt.Println("> Failed to move updated file, restoring from backup")
+				fmt.Println("> Restoring from backup")
 			}
 
-			backupTargetFile := filepath.Dir(source) + filepath.Base(source) + "-backup"
-			if backupErr := os.Rename(backupTargetFile, target); backupErr != nil {
+			// backupTargetFile := filepath.Dir(source) + filepath.Base(source) + "-backup"
+			backupTargetFile := filepath.Join(filepath.Dir(source), fmt.Sprintf("%s-backup", filepath.Base(source)))
+			if backupErr := CopyFile(backupTargetFile, target); backupErr != nil {
 				fmt.Println()
-				fmt.Printf("Unable to restore original file \nKindly move %s to %s \n", backupTargetFile, target)
+				fmt.Println("Unable to restore original file:\n", backupErr)
+
+				fmt.Println("-------------------")
+				fmt.Println("> Kindly move manually to restore original state:")
+				fmt.Printf("mv %s %s\n", backupTargetFile, target)
+				fmt.Println("-------------------")
+
 				fmt.Println()
 				// panic to skip deletion of
 				panic(backupTargetFile)

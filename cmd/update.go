@@ -26,6 +26,7 @@ package cmd
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -95,13 +96,13 @@ func update(cmd *cobra.Command, args []string) {
 	// get path to current executable
 	currentExecPath, err := fileutils.GetPathToCurrentBinary()
 	if err != nil {
-		exit(fmt.Sprint("Could not evaluate path to current binary. Auto update fail\nFor more information, visit", config.AppConfig.PrivadoRepository), true)
+		exitUpdate(fmt.Sprint("Could not evaluate path to current binary. Auto update fail\nFor more information, visit", config.AppConfig.PrivadoRepository), true)
 	}
 
 	// check for appropriate permissions
 	hasPerm, err := fileutils.HasWritePermissionToFileNew(currentExecPath)
 	if err != nil {
-		exit(fmt.Sprintf("Could not open executable for write: %s", err), true)
+		exitUpdate(fmt.Sprintf("Could not open executable for write: %s", err), true)
 	}
 	if !hasPerm {
 		fmt.Println("> Error: Permission denied")
@@ -114,7 +115,7 @@ func update(cmd *cobra.Command, args []string) {
 	fmt.Println("Fetching latest release..")
 	hasUpdate, updateMessage, err := checkForUpdate()
 	if err != nil {
-		exit("Could not fetch latest release. Some error occurred", true)
+		exitUpdate("Could not fetch latest release. Some error occurred", true)
 	}
 	if !hasUpdate {
 		exit(fmt.Sprint("You are already using the latest version of Privado CLI: ", Version), false)
@@ -131,16 +132,25 @@ func update(cmd *cobra.Command, args []string) {
 	githubReleaseDownloadURL := replacer.Replace(config.ExtConfig.GitHubReleaseDownloadURL)
 
 	// create temporary directory for update assets
+	// another approach is to use installation dir to create temp dir instead of systemm default
+	// temporaryDirectory, err := ioutil.TempDir(filepath.Dir(currentExecPath), "privado-update-")
+	// that is good in general due to no unexpected permission or partition issues with os.Rename
+	// but can cause bad side-effects in case of errors
 	temporaryDirectory, err := ioutil.TempDir("", "privado-update-")
 	if err != nil {
-		exit("Could not create temporary download file. Terminating..", true)
+		exitUpdate("Could not create temporary download file. Terminating..", true)
 	}
+	defer func() {
+		// ignore errors (tmp dir)
+		os.RemoveAll(temporaryDirectory)
+	}()
+
 	downloadedFilePath := filepath.Join(temporaryDirectory, config.AppConfig.PrivadoRepositoryReleaseFilename)
 
 	// download to file in temp directory
 	err = utils.DownloadToFile(githubReleaseDownloadURL, downloadedFilePath)
 	if err != nil {
-		exit(fmt.Sprint("Could not download release asset: ", githubReleaseDownloadURL), true)
+		exitUpdate(fmt.Sprint("Could not download release asset: ", githubReleaseDownloadURL), true)
 	}
 	fmt.Println()
 	fmt.Println("Downloaded release asset:", githubReleaseDownloadURL)
@@ -151,7 +161,7 @@ func update(cmd *cobra.Command, args []string) {
 	fmt.Println("Extracting release asset..")
 	err = fileutils.ExtractTarGzFile(downloadedFilePath, temporaryDirectory)
 	if err != nil {
-		exit(fmt.Sprintf("Could not extract release asset: %s: %v", downloadedFilePath, err), true)
+		exitUpdate(fmt.Sprintf("Could not extract release asset: %s: %v", downloadedFilePath, err), true)
 	}
 
 	fmt.Println("Extracted release asset:", temporaryDirectory)
@@ -163,14 +173,20 @@ func update(cmd *cobra.Command, args []string) {
 	time.Sleep(config.AppConfig.SlowdownTime)
 	err = fileutils.SafeMoveFile(filepath.Join(temporaryDirectory, "privado"), currentExecPath, true)
 	if err != nil {
-		exit(fmt.Sprint("Could not update existing installation: ", err), true)
+		exitUpdate(fmt.Sprint("Could not update existing installation: ", err), true)
 	}
 
 	// woof! all done.
 	time.Sleep(config.AppConfig.SlowdownTime)
 	fmt.Println()
 	fmt.Println("Installed latest release!")
-	exit("To validate installation, run `privado version`", false)
+	fmt.Println("To validate installation, run `privado version`")
+}
+
+func exitUpdate(msg string, isError bool) {
+	fmt.Println(msg)
+	fmt.Println()
+	exit(fmt.Sprint("> Auto-update failed. Kindly try again or reinstall to update: ", config.AppConfig.PrivadoRepository), isError)
 }
 
 func init() {

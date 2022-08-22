@@ -148,6 +148,12 @@ func ExtractTarGzFile(sourceFile, target string) error {
 	return nil
 }
 
+// os.Rename panics with "invalid cross-device link"
+// for cases where the source is on a different volume
+// or if the source volume is masked like in some
+// linux systems and hence we attempt to perform
+// copy+delete to replicate a move operation
+// with added backup fallbacks
 func SafeMoveFile(source, target string, showLogs bool) (err error) {
 	// Resolve symlinks and use actual path for critical operation
 	if source, err = filepath.EvalSymlinks(source); err != nil {
@@ -190,7 +196,7 @@ func SafeMoveFile(source, target string, showLogs bool) (err error) {
 		}()
 	}
 
-	err = os.Rename(source, target)
+	err = CopyFile(source, target)
 	if err != nil {
 		// if file existed initially, place it back
 		if showLogs {
@@ -204,7 +210,7 @@ func SafeMoveFile(source, target string, showLogs bool) (err error) {
 
 			// backupTargetFile := filepath.Dir(source) + filepath.Base(source) + "-backup"
 			backupTargetFile := filepath.Join(filepath.Dir(source), fmt.Sprintf("%s-backup", filepath.Base(source)))
-			if backupErr := os.Rename(backupTargetFile, target); backupErr != nil {
+			if backupErr := CopyFile(backupTargetFile, target); backupErr != nil {
 				fmt.Println()
 				fmt.Println("Unable to restore original file:\n", backupErr)
 

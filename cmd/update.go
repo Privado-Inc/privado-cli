@@ -100,7 +100,7 @@ func update(cmd *cobra.Command, args []string) {
 	}
 
 	// check for appropriate permissions
-	hasPerm, err := fileutils.HasWritePermissionToFileNew(currentExecPath)
+	hasPerm, err := fileutils.HasWritePermissionToFile(currentExecPath)
 	if err != nil {
 		exitUpdate(fmt.Sprintf("Could not open executable for write: %s", err), true)
 	}

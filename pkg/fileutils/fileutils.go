@@ -28,11 +28,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"github.com/codeclysm/extract/v3"
 )
@@ -104,33 +102,6 @@ func GetPathToCurrentBinary() (string, error) {
 	}
 
 	return resolvedFilePath, nil
-}
-
-// yields error on linux systems after upgrades
-// Could not open executable for write: open privado-cli/privado: text file busy
-func HasWritePermissionToFile(filePath string) (bool, error) {
-	file, err := os.OpenFile(filePath, os.O_RDWR, 0744)
-	if err != nil {
-		if errors.Is(err, fs.ErrPermission) {
-			return false, nil
-		}
-		return false, err
-	}
-	defer file.Close()
-
-	return true, nil
-}
-
-func HasWritePermissionToFileNew(filePath string) (bool, error) {
-	err := syscall.Access(filePath, uint32(os.O_RDWR))
-	if err != nil {
-		if errors.Is(err, fs.ErrPermission) {
-			return false, nil
-		}
-		return false, err
-	}
-
-	return true, nil
 }
 
 func ExtractTarGzFile(sourceFile, target string) error {

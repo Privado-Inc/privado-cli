@@ -166,7 +166,7 @@ The section contains detailed reference to `privado` commands.
 Privado CLI was engineered with security in mind. Our tool runs the scan locally on your machine and your code never leaves your system.
 
 ## License
-Privado OSS is distributed under the GNU Lesser GENERAL PUBLIC LICENSE(AGPL 3.0). This application may only be used in compliance with the License. In lieu of applicable law or written agreement, software distributed under the License is distributed "AS IS", VOID OF ALL WARRANTIES OR CONDITIONS. For specific details regarding permissions and restrictions, see [COPYING](/COPYING) and [COPYING.LESSER](/COPYING.LESSER).
+Privado OSS is distributed under the GNU LESSER GENERAL PUBLIC LICENSE (LGPL 3.0). This application may only be used in compliance with the License. In lieu of applicable law or written agreement, software distributed under the License is distributed "AS IS", VOID OF ALL WARRANTIES OR CONDITIONS. For specific details regarding permissions and restrictions, see [COPYING](/COPYING) and [COPYING.LESSER](/COPYING.LESSER).
 
 <!-- 
 ### Source-code pre-text

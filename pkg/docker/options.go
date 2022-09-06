@@ -47,6 +47,7 @@ type RunImageOption func(opts *runImageHandler)
 
 type runImageHandler struct {
 	pullLatestImage                     bool
+	entrypoint                          []string
 	args                                []string
 	volumes                             containerVolumes
 	environmentVars                     []string
@@ -218,5 +219,11 @@ func OptionWithDebug(isDebug bool) RunImageOption {
 			rh.attachOutput = true
 			rh.args = append(rh.args, fmt.Sprintf("-Dlog4j2.configurationFile=%s", config.AppConfig.Container.LogConfigVolumeDir))
 		}
+	}
+}
+
+func OptionWithEntrypoint(entrypoint []string) RunImageOption {
+	return func(rh *runImageHandler) {
+		rh.entrypoint = entrypoint
 	}
 }

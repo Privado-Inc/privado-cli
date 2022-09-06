@@ -306,7 +306,6 @@ func StopContainer(client *client.Client, ctx context.Context, containerId strin
 
 func RunImage(opts ...RunImageOption) error {
 	runOptions := newRunImageHandler(opts)
-
 	ctx := context.Background()
 
 	client, err := getDefaultDockerClient()
@@ -324,6 +323,7 @@ func RunImage(opts ...RunImageOption) error {
 
 	// Generate container configurations
 	containerConfig := getBaseContainerConfig(image)
+	containerConfig.Entrypoint = runOptions.entrypoint
 	containerConfig.Cmd = runOptions.args
 	containerConfig.Env = runOptions.environmentVars
 	hostConfig := getContainerHostConfig(runOptions.volumes)

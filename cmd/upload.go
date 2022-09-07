@@ -37,7 +37,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var syncCmd = &cobra.Command{
+var uploadCmd = &cobra.Command{
 	Use:   "upload <repository>",
 	Short: "Sync the results with the privado.ai Cloud Dashboard",
 	Args:  cobra.ExactArgs(1),
@@ -45,13 +45,13 @@ var syncCmd = &cobra.Command{
 		telemetry.DefaultInstance.RecordAtomicMetric("version", Version)
 		telemetry.DefaultInstance.RecordAtomicMetric("cmd", strings.Join(os.Args, " "))
 	},
-	Run: sync,
+	Run: upload,
 	PostRun: func(cmd *cobra.Command, args []string) {
 		telemetryPostRun(nil)
 	},
 }
 
-func sync(cmd *cobra.Command, args []string) {
+func upload(cmd *cobra.Command, args []string) {
 	repository := args[0]
 	debug, _ := cmd.Flags().GetBool("debug")
 	// overwriteResults, _ := cmd.Flags().GetBool("overwrite")
@@ -77,7 +77,7 @@ func sync(cmd *cobra.Command, args []string) {
 	}
 
 	entrypoint := []string{
-		"/usr/local/bin/core", "upload",
+		config.AppConfig.Container.PrivadoCoreBinPath, "upload",
 	}
 
 	// run image with options
@@ -87,9 +87,7 @@ func sync(cmd *cobra.Command, args []string) {
 		docker.OptionWithArgs(commandArgs),
 		docker.OptionWithAttachedOutput(),
 		docker.OptionWithSourceVolume(fileutils.GetAbsolutePath(repository)),
-		docker.OptionWithUserConfigVolume(config.AppConfig.UserConfigurationFilePath),
 		docker.OptionWithUserKeyVolume(config.AppConfig.UserKeyPath),
-		docker.OptionWithPackageCacheVolumes(),
 		docker.OptionWithDebug(debug),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
 			{Key: "PRIVADO_VERSION_CLI", Value: Version},
@@ -110,5 +108,5 @@ func sync(cmd *cobra.Command, args []string) {
 }
 
 func init() {
-	rootCmd.AddCommand(syncCmd)
+	rootCmd.AddCommand(uploadCmd)
 }

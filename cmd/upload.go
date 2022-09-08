@@ -54,7 +54,6 @@ var uploadCmd = &cobra.Command{
 func upload(cmd *cobra.Command, args []string) {
 	repository := args[0]
 	debug, _ := cmd.Flags().GetBool("debug")
-	// overwriteResults, _ := cmd.Flags().GetBool("overwrite")
 
 	hasUpdate, updateMessage, err := checkForUpdate()
 	if err == nil && hasUpdate {
@@ -71,13 +70,13 @@ func upload(cmd *cobra.Command, args []string) {
 		config.LoadUserDockerHash(dockerAccessKey)
 	}
 
+	entrypoint := []string{
+		config.AppConfig.Container.PrivadoCoreBinPath, "upload",
+	}
+
 	// "always pass -ic: even when internal rules are ignored (-i)"
 	commandArgs := []string{
 		config.AppConfig.Container.SourceCodeVolumeDir,
-	}
-
-	entrypoint := []string{
-		config.AppConfig.Container.PrivadoCoreBinPath, "upload",
 	}
 
 	// run image with options

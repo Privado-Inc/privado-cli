@@ -65,11 +65,16 @@ func upload(cmd *cobra.Command, args []string) {
 		fmt.Println()
 	}
 
+	fmt.Println("> Uploading results for directory:", fileutils.GetAbsolutePath(repository))
+	time.Sleep(config.AppConfig.SlowdownTime)
+
 	resultsPath := filepath.Join(fileutils.GetAbsolutePath(repository), config.AppConfig.PrivacyResultsPathSuffix)
-	exists, _ := fileutils.DoesFileExists(resultsPath)
-	if !exists {
-		fmt.Printf("> Cannot find scan results in the specified directory (%s)", config.AppConfig.PrivacyResultsPathSuffix)
-		exit("\n> Run 'privado scan <dir>' instead. Run 'privado help' for more information.", true)
+	if exists, _ := fileutils.DoesFileExists(resultsPath); !exists {
+		exit(fmt.Sprint(
+			fmt.Sprintf("Cannot find scan results (%s) in the specified directory\n", config.AppConfig.PrivacyResultsPathSuffix),
+			"Run 'privado scan <dir>' instead\n\n",
+			"Run 'privado help' for more information.",
+		), true)
 	}
 
 	if dockerAccessKey, err := docker.GetPrivadoDockerAccessKey(true); err != nil || dockerAccessKey == "" {
@@ -78,19 +83,17 @@ func upload(cmd *cobra.Command, args []string) {
 		config.LoadUserDockerHash(dockerAccessKey)
 	}
 
-	entrypoint := []string{
-		config.AppConfig.Container.PrivadoCoreBinPath, "upload",
+	command := []string{
+		config.AppConfig.Container.PrivadoCoreBinPath,
+		"upload",
 	}
 
-	// "always pass -ic: even when internal rules are ignored (-i)"
-	commandArgs := []string{
-		config.AppConfig.Container.SourceCodeVolumeDir,
-	}
+	commandArgs := []string{config.AppConfig.Container.SourceCodeVolumeDir}
 
 	// run image with options
 	err = docker.RunImage(
 		docker.OptionWithLatestImage(false), // because we already pull the image for access-key (with pullImage parameter)
-		docker.OptionWithEntrypoint(entrypoint),
+		docker.OptionWithEntrypoint(command),
 		docker.OptionWithArgs(commandArgs),
 		docker.OptionWithAttachedOutput(),
 		docker.OptionWithSourceVolume(fileutils.GetAbsolutePath(repository)),

@@ -26,6 +26,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -62,6 +63,13 @@ func upload(cmd *cobra.Command, args []string) {
 		fmt.Println("To use the latest version of Privado CLI, run `privado update`")
 		time.Sleep(config.AppConfig.SlowdownTime)
 		fmt.Println()
+	}
+
+	resultsPath := filepath.Join(fileutils.GetAbsolutePath(repository), config.AppConfig.PrivacyResultsPathSuffix)
+	exists, _ := fileutils.DoesFileExists(resultsPath)
+	if !exists {
+		fmt.Printf("> Cannot find scan results in the specified directory (%s)", config.AppConfig.PrivacyResultsPathSuffix)
+		exit("\n> Run 'privado scan <dir>' instead. Run 'privado help' for more information.", true)
 	}
 
 	if dockerAccessKey, err := docker.GetPrivadoDockerAccessKey(true); err != nil || dockerAccessKey == "" {

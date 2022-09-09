@@ -68,6 +68,7 @@ type ContainerConfiguration struct {
 	ExternalRulesVolumeDir      string
 	M2PackageCacheVolumeDir     string
 	GradlePackageCacheVolumeDir string
+	PrivadoCoreBinPath          string
 }
 
 // init function for AppConfig
@@ -121,6 +122,7 @@ func init() {
 			ExternalRulesVolumeDir:      "/app/external-rules",
 			M2PackageCacheVolumeDir:     "/root/.m2",
 			GradlePackageCacheVolumeDir: "/root/.gradle",
+			PrivadoCoreBinPath:          "/usr/local/bin/core",
 		},
 	}
 

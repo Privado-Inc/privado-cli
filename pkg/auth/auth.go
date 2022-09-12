@@ -25,7 +25,7 @@ package auth
 import (
 	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 
 	"github.com/Privado-Inc/privado-cli/pkg/fileutils"
@@ -34,7 +34,6 @@ import (
 
 // Ensures a validated UserKey exists
 func BootstrapUserKey(userKeyPath, userKeyDirectory string) error {
-
 	if keyExists, _ := fileutils.DoesFileExists(userKeyPath); keyExists {
 		// if verification fails, continue to regenerate
 		if err := VerifyUserKeyFile(userKeyPath); err == nil {
@@ -52,6 +51,16 @@ func BootstrapUserKey(userKeyPath, userKeyDirectory string) error {
 	}
 
 	return nil
+}
+
+func GenerateUserKeyFromString(msg string) string {
+	hash := CalculateSHA256HashInBytes(msg)
+	uuid, err := uuid.FromBytes(hash[:16])
+	if err != nil {
+		panic(fmt.Errorf("cannot generate uuid from string %s: %v", msg, err))
+	}
+
+	return uuid.String()
 }
 
 // Returns a string UUID
@@ -82,6 +91,16 @@ func CalculateSHA256Hash(key string) string {
 	return fmt.Sprintf("%x", hashByteArray[:])
 }
 
+// similar to CalculateSHA256Hash, but does not convert byte array to string
+// we noticed unwanted type conversions when, converting back to []byte from string
+// created another for simplicity and to avoid unnecessary complications
+func CalculateSHA256HashInBytes(key string) [32]byte {
+	if key == "" {
+		panic("fatal: the function restricts generating hash for empty key string")
+	}
+	return sha256.Sum256([]byte(key))
+}
+
 // Gets the user key and returns the calculated hash for it
 func GetUserHash(userKeyPath string) string {
 	return CalculateSHA256Hash(GetUserKey(userKeyPath))
@@ -96,7 +115,7 @@ func VerifyUserKeyFile(pathToFile string) error {
 	defer file.Close()
 
 	// read file
-	dataBytes, err := ioutil.ReadAll(file)
+	dataBytes, err := io.ReadAll(file)
 	if err != nil {
 		return err
 	}

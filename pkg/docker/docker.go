@@ -356,7 +356,8 @@ func RunImage(opts ...RunImageOption) error {
 				url := utils.ExtractURLFromString(message)
 				if url != "" {
 					telemetry.DefaultInstance.RecordAtomicMetric("didParseCloudLink", true)
-					if err := utils.OpenURLInBrowser(url); err != nil {
+					err := utils.OpenURLInBrowser(url)
+					if err != nil {
 						telemetry.DefaultInstance.RecordArrayMetric("error", err)
 					}
 					telemetry.DefaultInstance.RecordAtomicMetric("didAutoSpawnBrowser", err == nil)

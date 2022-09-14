@@ -28,6 +28,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/Privado-Inc/privado-cli/pkg/ci"
 	"github.com/Privado-Inc/privado-cli/pkg/fileutils"
 	"github.com/google/uuid"
 )
@@ -53,6 +54,10 @@ func BootstrapUserKey(userKeyPath, userKeyDirectory string) error {
 	return nil
 }
 
+// the fn hashes the supplied string first and uses first 16 bytes
+// of the generated hash to be converted to UUID. As each bit of
+// SHA hash is effectively random, we get a unique-uuid for each
+// distinct string, even when they have minimal differences
 func GenerateUserKeyFromString(msg string) string {
 	hash := CalculateSHA256HashInBytes(msg)
 	uuid, err := uuid.FromBytes(hash[:16])
@@ -65,6 +70,24 @@ func GenerateUserKeyFromString(msg string) string {
 
 // Returns a string UUID
 func GenerateUserKey() string {
+	if ci.CISessionConfig.IsCI {
+		// if UserIdentifier is Null for CI Env
+		// either we do not support the provider yet, or we were
+		// not able to get appropriate user identifier for the
+		// provider, in both cases, use a default user id for
+		// CI, so all miscellaneous CI runs can be tracked
+		// as part of the default identified CI user
+		if ci.CISessionConfig.UserIdentifier == "" {
+			fmt.Println("> Unknown CI identifier. Setting default CI user")
+			ci.CISessionConfig.UserIdentifier = "PrivadoDefaultCIUserIdentifier"
+		}
+
+		fmt.Println("> Identified CI user:", ci.CISessionConfig.UserIdentifier)
+		fmt.Println()
+
+		return GenerateUserKeyFromString(ci.CISessionConfig.UserIdentifier)
+	}
+
 	return uuid.NewString()
 }
 

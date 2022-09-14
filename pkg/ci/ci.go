@@ -105,14 +105,9 @@ func Bootstrap(customUserIdentifierKey string) {
 		// if custom user identifier is defined - use that to attempt to get value
 		// else if provider is identified, use that to get value from ci env
 		if customUserId := os.Getenv(CIConfig.CustomUserIdentifierKey); customUserId != "" {
-			fmt.Println("> Detected set", CIConfig.CustomUserIdentifierKey)
 			CISessionConfig.UserIdentifier = customUserId
 		} else if CISessionConfig.Provider != nil {
 			CISessionConfig.UserIdentifier = CISessionConfig.Provider.GetUserIdentifierFromCIEnvironment()
-		}
-
-		if CISessionConfig.UserIdentifier != "" {
-			fmt.Println("> Identified CI user:", CISessionConfig.UserIdentifier)
 		}
 	}
 }
@@ -155,5 +150,5 @@ func (provider *Provider) GetUserIdentifierFromCIEnvironment() string {
 		return ""
 	}
 
-	return strings.Join(values, "-")
+	return strings.Join(values, "/")
 }

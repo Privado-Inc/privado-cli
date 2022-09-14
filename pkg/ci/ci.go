@@ -59,13 +59,19 @@ type Provider struct {
 	// name of the ci provider
 	Name string `json:"name"`
 
-	// defines the distinct env key that can be used to
-	// identify the CI provider in the ci environment
-	Identifier string `json:"identifier"`
+	// defines the distinct env key and its value that can be
+	// used to identify the CI provider in the ci environment
+	// all identifiers need to match in case of multiples
+	Identifiers []Identifier `json:"identifiers"`
 
 	// defines the env keys that can be used to
 	// identify the user in the ci environment
 	UserKeys []string `json:"keys"`
+}
+
+type Identifier struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
 // populate values for CIConfig
@@ -76,6 +82,11 @@ func init() {
 		CIIdentifierEnvKeys: []string{
 			"CI",
 			"CONTINUOUS_INTEGRATION",
+			"CI_BUILD_NUMBER",
+			"CI_BUILD_ID",
+			"CI_RUN_ID",
+			"CI_APP_ID",
+			"BUILD_NUMBER",
 		},
 	}
 
@@ -128,8 +139,17 @@ func IdentifyCIProvider() *Provider {
 	}
 
 	for _, provider := range *CIConfig.Providers {
-		if _, exists := os.LookupEnv(provider.Identifier); exists {
-			return &provider
+		for _, identifier := range provider.Identifiers {
+			if val, exists := os.LookupEnv(identifier.Key); exists {
+				// if IdentifierValue is specified, it must match
+				if identifier.Value != "" {
+					if identifier.Value == val {
+						return &provider
+					}
+				} else {
+					return &provider
+				}
+			}
 		}
 	}
 
@@ -142,6 +162,9 @@ func (provider *Provider) GetUserIdentifierFromCIEnvironment() string {
 	for _, key := range provider.UserKeys {
 		val := os.Getenv(key)
 		if val != "" {
+			if strings.Contains(key, "SLUG") {
+				val = strings.Split(val, "/")[0]
+			}
 			values = append(values, val)
 		}
 	}

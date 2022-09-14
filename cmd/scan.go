@@ -58,6 +58,11 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().BoolP("ignore-default-rules", "i", false, "If specified, the default rules are ignored and only the specified rule configurations (-c) are considered")
 	scanCmd.Flags().Bool("skip-dependency-download", false, "When specified, the engine skips downloading all locally unavailable dependencies. Skipping dependency download can yield incomplete results")
 	scanCmd.Flags().Bool("disable-deduplication", false, "When specified, the engine does not remove duplicate and subset dataflows. This option is useful if you wish to review all flows (including duplicates) manually")
+
+	scanCmd.Flags().Bool("upload", false, "If specified, will automatically attempt to upload the scan result to Privado Privacy View Dashboard")
+	scanCmd.Flags().Bool("skip-upload", false, "If specified, the result artifacts will not be uploaded to Privado Dashboard")
+	scanCmd.MarkFlagsMutuallyExclusive("upload", "skip-upload")
+
 	scanCmd.Flags().Bool("overwrite", false, "If specified, the warning prompt for existing scan results is disabled and any existing results are overwritten")
 	scanCmd.Flags().Bool("debug", false, "Enables privado-core image output in debug mode")
 }
@@ -68,6 +73,8 @@ func scan(cmd *cobra.Command, args []string) {
 	overwriteResults, _ := cmd.Flags().GetBool("overwrite")
 	skipDependencyDownload, _ := cmd.Flags().GetBool("skip-dependency-download")
 	disableDeduplication, _ := cmd.Flags().GetBool("disable-deduplication")
+	explicitUpload, _ := cmd.Flags().GetBool("upload")
+	explicitSkipUpload, _ := cmd.Flags().GetBool("skip-upload")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -123,6 +130,12 @@ func scan(cmd *cobra.Command, args []string) {
 		config.AppConfig.Container.SourceCodeVolumeDir,
 		"-ic",
 		config.AppConfig.Container.InternalRulesVolumeDir,
+	}
+
+	if explicitUpload {
+		commandArgs = append(commandArgs, "--upload")
+	} else if explicitSkipUpload {
+		commandArgs = append(commandArgs, "--skip-upload")
 	}
 
 	// run image with options

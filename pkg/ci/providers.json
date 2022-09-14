@@ -3,7 +3,7 @@
         "name": "GitHub Actions",
         "identifier": "GITHUB_ACTION",
         "keys": [
-            "GITHUB_REPOSITORY"
-        ] 
+            "GITHUB_REPOSITORY_OWNER"
+        ]
     }
 ]

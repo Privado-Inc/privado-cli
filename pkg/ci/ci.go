@@ -26,6 +26,9 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"os"
+	"strconv"
+	"strings"
 )
 
 // this directive is necessary to load file in this variable;
@@ -35,26 +38,34 @@ import (
 var CIProvidersFile []byte
 
 // Session CI Configuration
-var CISessionConfig *CISession
+var CISessionConfig *CISession = &CISession{}
 
 // Global CI Configuration
-var CIConfig *CI
+var CIConfig *CI = &CI{}
 
 type CI struct {
-	CIIdentifierEnvKeys []string
-	Providers           *[]Provider
+	CIIdentifierEnvKeys     []string
+	Providers               *[]Provider
+	CustomUserIdentifierKey string
 }
 
 type CISession struct {
-	IsCI            bool
-	RepositoryValue string
-	Provider        *Provider
+	IsCI           bool
+	UserIdentifier string
+	Provider       *Provider
 }
 
 type Provider struct {
-	Name           string   `json:"name"`
-	Identifier     string   `json:"identifier"`
-	RepositoryKeys []string `json:"keys"`
+	// name of the ci provider
+	Name string `json:"name"`
+
+	// defines the distinct env key that can be used to
+	// identify the CI provider in the ci environment
+	Identifier string `json:"identifier"`
+
+	// defines the env keys that can be used to
+	// identify the user in the ci environment
+	UserKeys []string `json:"keys"`
 }
 
 // populate values for CIConfig
@@ -71,4 +82,78 @@ func init() {
 	if err := json.Unmarshal(CIProvidersFile, &CIConfig.Providers); err != nil {
 		fmt.Println("> Could not parse CI providers from `providers.json`")
 	}
+}
+
+// populates session information in CISessionConfig
+// Session values do not populate automatically with
+// an intent of required custom loaders that users
+// might want to load something before bootstrapping
+func Bootstrap(customUserIdentifierKey string) {
+	CIConfig.CustomUserIdentifierKey = customUserIdentifierKey
+
+	// detect ci env
+	CISessionConfig.IsCI = IsCIEnvironment()
+	if CISessionConfig.IsCI {
+		fmt.Println("> Detected CI environment")
+
+		// detect provider
+		CISessionConfig.Provider = IdentifyCIProvider()
+		if CISessionConfig.Provider != nil {
+			fmt.Println("> Identified CI provider:", CISessionConfig.Provider.Name)
+		}
+
+		// if custom user identifier is defined - use that to attempt to get value
+		// else if provider is identified, use that to get value from ci env
+		if customUserId := os.Getenv(CIConfig.CustomUserIdentifierKey); customUserId != "" {
+			fmt.Println("> Detected set", CIConfig.CustomUserIdentifierKey)
+			CISessionConfig.UserIdentifier = customUserId
+		} else if CISessionConfig.Provider != nil {
+			CISessionConfig.UserIdentifier = CISessionConfig.Provider.GetUserIdentifierFromCIEnvironment()
+		}
+
+		if CISessionConfig.UserIdentifier != "" {
+			fmt.Println("> Identified CI user:", CISessionConfig.UserIdentifier)
+		}
+	}
+}
+
+func IsCIEnvironment() bool {
+	for _, key := range CIConfig.CIIdentifierEnvKeys {
+		isCI, _ := strconv.ParseBool(os.Getenv(key))
+		if isCI {
+			return true
+		}
+	}
+	return false
+}
+
+func IdentifyCIProvider() *Provider {
+	if err := json.Unmarshal(CIProvidersFile, &CIConfig.Providers); err != nil {
+		fmt.Println("Could not identify the CI provider")
+	}
+
+	for _, provider := range *CIConfig.Providers {
+		if _, exists := os.LookupEnv(provider.Identifier); exists {
+			return &provider
+		}
+	}
+
+	return nil
+}
+
+func (provider *Provider) GetUserIdentifierFromCIEnvironment() string {
+	values := []string{}
+
+	for _, key := range provider.UserKeys {
+		val := os.Getenv(key)
+		if val != "" {
+			values = append(values, val)
+		}
+	}
+
+	if len(values) == 0 {
+		return ""
+	}
+
+	return strings.Join(values, "-")
 }

@@ -28,11 +28,18 @@ import (
 
 	"github.com/Privado-Inc/privado-cli/cmd"
 	"github.com/Privado-Inc/privado-cli/pkg/auth"
+	"github.com/Privado-Inc/privado-cli/pkg/ci"
 	"github.com/Privado-Inc/privado-cli/pkg/config"
 )
 
 func bootstrap() {
+	// bootstrap to populate ci session details from env in the ci package
+	ci.Bootstrap(config.AppConfig.CIUserIdentifierEnvKey)
+
 	// bootstrap the userkey UUID
+	// Any existing "user.key" will override the identified CIUserIdentifier in the previous step
+	// Existing key takes precendence. This is intentional as CI users also may want to bootstrap
+	// their environment with an existing key, in which case also the set env var is ignored
 	err := auth.BootstrapUserKey(config.AppConfig.UserKeyPath, config.AppConfig.UserKeyDirectory)
 	if err != nil {
 		panic(fmt.Sprintf("Fatal: cannot bootstrap user key: %s", err))

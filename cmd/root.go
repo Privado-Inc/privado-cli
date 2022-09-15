@@ -26,9 +26,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	// homedir "github.com/mitchellh/go-homedir"
 
+	"github.com/Privado-Inc/privado-cli/pkg/ci"
 	"github.com/Privado-Inc/privado-cli/pkg/config"
 	"github.com/Privado-Inc/privado-cli/pkg/telemetry"
 	"github.com/spf13/cobra"
@@ -65,6 +67,19 @@ func Execute() {
 			}
 		}
 	}()
+}
+
+func telemetryPreRun(t *telemetry.Telemetry) {
+	if t == nil {
+		t = telemetry.DefaultInstance
+	}
+
+	t.RecordAtomicMetric("version", Version)
+	t.RecordAtomicMetric("cmd", strings.Join(os.Args, " "))
+	t.RecordAtomicMetric("ci", ci.CISessionConfig.IsCI)
+	if ci.CISessionConfig.IsCI && ci.CISessionConfig.Provider != nil {
+		t.RecordAtomicMetric("ciProvider", ci.CISessionConfig.Provider.Name)
+	}
 }
 
 func telemetryPostRun(t *telemetry.Telemetry) {

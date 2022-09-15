@@ -25,26 +25,24 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/Privado-Inc/privado-cli/pkg/ci"
 	"github.com/Privado-Inc/privado-cli/pkg/config"
 	"github.com/Privado-Inc/privado-cli/pkg/docker"
 	"github.com/Privado-Inc/privado-cli/pkg/fileutils"
-	"github.com/Privado-Inc/privado-cli/pkg/telemetry"
 	"github.com/spf13/cobra"
 )
 
 var uploadCmd = &cobra.Command{
 	Use:   "upload <repository>",
-	Short: "Sync the results with the privado.ai Cloud Dashboard",
+	Short: "Sync scan results with Privado Privacy View Cloud Dashboard",
 	Args:  cobra.ExactArgs(1),
 	PreRun: func(cmd *cobra.Command, args []string) {
-		telemetry.DefaultInstance.RecordAtomicMetric("version", Version)
-		telemetry.DefaultInstance.RecordAtomicMetric("cmd", strings.Join(os.Args, " "))
+		telemetryPreRun(nil)
 	},
 	Run: upload,
 	PostRun: func(cmd *cobra.Command, args []string) {
@@ -100,6 +98,7 @@ func upload(cmd *cobra.Command, args []string) {
 		docker.OptionWithUserKeyVolume(config.AppConfig.UserKeyPath),
 		docker.OptionWithDebug(debug),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
+			{Key: "CI", Value: strings.ToUpper(strconv.FormatBool(ci.CISessionConfig.IsCI))},
 			{Key: "PRIVADO_VERSION_CLI", Value: Version},
 			{Key: "PRIVADO_HOST_SCAN_DIR", Value: fileutils.GetAbsolutePath(repository)},
 			{Key: "PRIVADO_USER_HASH", Value: config.UserConfig.UserHash},

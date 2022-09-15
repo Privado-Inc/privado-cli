@@ -44,6 +44,7 @@ type Configuration struct {
 	UserConfigurationFilePath        string
 	UserKeyDirectory                 string
 	UserKeyPath                      string
+	CIUserIdentifierEnvKey           string
 	M2CacheDirectoryName             string
 	GradleCacheDirectoryName         string
 	PrivacyResultsPathSuffix         string
@@ -68,6 +69,7 @@ type ContainerConfiguration struct {
 	ExternalRulesVolumeDir      string
 	M2PackageCacheVolumeDir     string
 	GradlePackageCacheVolumeDir string
+	PrivadoCoreBinPath          string
 }
 
 // init function for AppConfig
@@ -101,6 +103,7 @@ func init() {
 		UserConfigurationFilePath:        filepath.Join(home, ".privado", "config.json"),
 		UserKeyDirectory:                 filepath.Join(home, ".privado", "keys"),
 		UserKeyPath:                      filepath.Join(home, ".privado", "keys", "user.key"),
+		CIUserIdentifierEnvKey:           "PRIVADO_CI_USER_ID",
 		M2CacheDirectoryName:             ".m2",
 		GradleCacheDirectoryName:         ".gradle",
 		PrivacyResultsPathSuffix:         filepath.Join(".privado", "privado.json"),
@@ -121,6 +124,7 @@ func init() {
 			ExternalRulesVolumeDir:      "/app/external-rules",
 			M2PackageCacheVolumeDir:     "/root/.m2",
 			GradlePackageCacheVolumeDir: "/root/.gradle",
+			PrivadoCoreBinPath:          "/usr/local/bin/core",
 		},
 	}
 

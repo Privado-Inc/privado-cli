@@ -1,0 +1,94 @@
+[
+    {
+        "name": "GitHub Actions",
+        "identifiers": [{
+            "key": "GITHUB_ACTION"
+        }],
+        "keys": [
+            "GITHUB_REPOSITORY_OWNER"
+        ]
+    },
+    {
+        "name": "GitLab CI (Cloud)",
+        "identifiers": [{
+            "key": "CI_SERVER_HOST",
+            "value": "gitlab.com"
+        }],
+        "keys": [
+            "CI_PROJECT_ROOT_NAMESPACE"
+        ]
+    },
+    {
+        "name": "GitLab CI (Self-Hosted)",
+        "identifiers": [{
+            "key": "GITLAB_CI" 
+        }],
+        "keys": [
+            "CI_SERVER_HOST"
+        ]
+    },
+    {
+        "name": "Jenkins",
+        "identifiers": [
+            {
+                "key": "JENKINS_URL" 
+            },
+            {
+                "key": "HUDSON_URL"
+            },
+            {
+                "key": "USER",
+                "value": "jenkins"
+            }
+        ],
+        "keys": [
+            "JENKINS_URL"
+        ]
+    },
+    {
+        "name": "Circle CI",
+        "identifiers": [{
+            "key": "CIRCLECI" 
+        }],
+        "keys": [
+            "CIRCLE_PROJECT_USERNAME"
+        ]
+    },
+    {
+        "name": "Travis CI",
+        "identifiers": [
+            {
+                "key": "TRAVIS" 
+            },
+            {
+                "key": "USER",
+                "value": "travis"
+            }
+        ],
+        "keys": [
+            "TRAVIS_REPO_SLUG"
+        ]
+    },
+    {
+        "name": "AppVeyor",
+        "identifiers": [
+            {
+                "key": "APPVEYOR" 
+            }
+        ],
+        "keys": [
+            "APPVEYOR_ACCOUNT_NAME"
+        ]
+    },
+    {
+        "name": "Buildkite",
+        "identifiers": [
+            {
+                "key": "BUILDKITE" 
+            }
+        ],
+        "keys": [
+            "BUILDKITE_ORGANIZATION_SLUG"
+        ]
+    }
+]

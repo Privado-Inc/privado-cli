@@ -306,7 +306,6 @@ func StopContainer(client *client.Client, ctx context.Context, containerId strin
 
 func RunImage(opts ...RunImageOption) error {
 	runOptions := newRunImageHandler(opts)
-
 	ctx := context.Background()
 
 	client, err := getDefaultDockerClient()
@@ -324,6 +323,7 @@ func RunImage(opts ...RunImageOption) error {
 
 	// Generate container configurations
 	containerConfig := getBaseContainerConfig(image)
+	containerConfig.Entrypoint = runOptions.entrypoint
 	containerConfig.Cmd = runOptions.args
 	containerConfig.Env = runOptions.environmentVars
 	hostConfig := getContainerHostConfig(runOptions.volumes)
@@ -356,7 +356,8 @@ func RunImage(opts ...RunImageOption) error {
 				url := utils.ExtractURLFromString(message)
 				if url != "" {
 					telemetry.DefaultInstance.RecordAtomicMetric("didParseCloudLink", true)
-					if err := utils.OpenURLInBrowser(url); err != nil {
+					err := utils.OpenURLInBrowser(url)
+					if err != nil {
 						telemetry.DefaultInstance.RecordArrayMetric("error", err)
 					}
 					telemetry.DefaultInstance.RecordAtomicMetric("didAutoSpawnBrowser", err == nil)

@@ -57,7 +57,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("skip-dependency-download", false, "When specified, the engine skips downloading all locally unavailable dependencies. Skipping dependency download can yield incomplete results")
 	scanCmd.Flags().Bool("disable-deduplication", false, "When specified, the engine does not remove duplicate and subset dataflows. This option is useful if you wish to review all flows (including duplicates) manually")
 
-	scanCmd.Flags().Bool("upload", false, "If specified, will automatically attempt to upload the scan result to Privado Privacy View Dashboard")
+	scanCmd.Flags().Bool("upload", false, "If specified, will automatically attempt to upload the scan result to Privado Dashboard")
 	scanCmd.Flags().Bool("skip-upload", false, "If specified, the result artifacts will not be uploaded to Privado Dashboard")
 	scanCmd.MarkFlagsMutuallyExclusive("upload", "skip-upload")
 

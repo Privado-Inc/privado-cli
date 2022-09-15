@@ -39,7 +39,7 @@ import (
 
 var uploadCmd = &cobra.Command{
 	Use:   "upload <repository>",
-	Short: "Sync scan results with Privado Privacy View Cloud Dashboard",
+	Short: "Sync scan results with Privado Dashboard",
 	Args:  cobra.ExactArgs(1),
 	PreRun: func(cmd *cobra.Command, args []string) {
 		telemetryPreRun(nil)

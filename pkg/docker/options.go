@@ -172,7 +172,7 @@ func OptionWithEnvironmentVariables(envVars []EnvVar) RunImageOption {
 		if len(envVars) > 0 {
 			processedEnvStrings := []string{}
 			for _, envVar := range envVars {
-				if envVar.Key != "" {
+				if envVar.Key != "" && envVar.Value != "" {
 					processedEnvStrings = append(processedEnvStrings, fmt.Sprintf("%s=%s", envVar.Key, envVar.Value))
 				}
 			}

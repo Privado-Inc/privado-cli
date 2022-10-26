@@ -63,6 +63,7 @@ func defineScanFlags(cmd *cobra.Command) {
 
 	scanCmd.Flags().Bool("overwrite", false, "If specified, the warning prompt for existing scan results is disabled and any existing results are overwritten")
 	scanCmd.Flags().Bool("debug", false, "Enables privado-core image output in debug mode")
+	scanCmd.Flags().String("jvm-args", "", "Specifies the JVM arguments to be passed to the scan engine; sets the 'JAVA_TOOL_OPTIONS' environment variable")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -73,6 +74,7 @@ func scan(cmd *cobra.Command, args []string) {
 	disableDeduplication, _ := cmd.Flags().GetBool("disable-deduplication")
 	explicitUpload, _ := cmd.Flags().GetBool("upload")
 	explicitSkipUpload, _ := cmd.Flags().GetBool("skip-upload")
+	jvmArgs, _ := cmd.Flags().GetString("jvm-args")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -158,6 +160,7 @@ func scan(cmd *cobra.Command, args []string) {
 			{Key: "PRIVADO_SESSION_ID", Value: config.UserConfig.SessionId},
 			{Key: "PRIVADO_SYNC_TO_CLOUD", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.SyncToPrivadoCloud))},
 			{Key: "PRIVADO_METRICS_ENABLED", Value: strings.ToUpper(strconv.FormatBool(config.UserConfig.ConfigFile.MetricsEnabled))},
+			{Key: "JAVA_TOOL_OPTIONS", Value: jvmArgs},
 		}),
 		docker.OptionWithAutoSpawnBrowserOnURLMessages([]string{
 			"> Continue to view results on:",

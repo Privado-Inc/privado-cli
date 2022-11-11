@@ -64,7 +64,8 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("overwrite", false, "If specified, the warning prompt for existing scan results is disabled and any existing results are overwritten")
 	scanCmd.Flags().Bool("debug", false, "Enables privado-core image output in debug mode")
 	scanCmd.Flags().String("jvm-args", "", "Specifies the JVM arguments to be passed to the scan engine; sets the 'JAVA_TOOL_OPTIONS' environment variable")
-	scanCmd.Flags().Bool("enablejs", false, "Specify if you want the JS code scan engine to run")
+	scanCmd.Flags().Bool("enable-experiments", false, "Flag to enable experimental features in the code scan")
+	scanCmd.Flags().Bool("enable-javascript", false, "Specify if you want the JS code scan engine to run")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -76,7 +77,8 @@ func scan(cmd *cobra.Command, args []string) {
 	explicitUpload, _ := cmd.Flags().GetBool("upload")
 	explicitSkipUpload, _ := cmd.Flags().GetBool("skip-upload")
 	jvmArgs, _ := cmd.Flags().GetString("jvm-args")
-	jsEnabled, _ := cmd.Flags().GetBool("enablejs")
+	experimentalEnabled, _ := cmd.Flags().GetBool("enable-experiments")
+	jsEnabled, _ := cmd.Flags().GetBool("enable-javascript")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -140,7 +142,7 @@ func scan(cmd *cobra.Command, args []string) {
 		commandArgs = append(commandArgs, "--skip-upload")
 	}
 
-	if jsEnabled {
+	if experimentalEnabled && jsEnabled {
 		commandArgs = append(commandArgs, "--enablejs")
 	}
 

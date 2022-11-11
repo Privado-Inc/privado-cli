@@ -65,7 +65,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("debug", false, "Enables privado-core image output in debug mode")
 	scanCmd.Flags().String("jvm-args", "", "Specifies the JVM arguments to be passed to the scan engine; sets the 'JAVA_TOOL_OPTIONS' environment variable")
 	scanCmd.Flags().Bool("enable-experiments", false, "Flag to enable experimental features in the code scan")
-	scanCmd.Flags().Bool("enable-javascript", false, "Specify if you want the JS code scan engine to run")
+	scanCmd.Flags().Bool("enable-javascript", false, "Experimental: Specify if you want the JS code scan engine to run")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -142,7 +142,13 @@ func scan(cmd *cobra.Command, args []string) {
 		commandArgs = append(commandArgs, "--skip-upload")
 	}
 
-	if experimentalEnabled && jsEnabled {
+	if !experimentalEnabled && (jsEnabled) {
+		fmt.Println("> ERROR: Experimental flag used without expliciting using --enable-experiments.")
+		fmt.Println("> Use the --enable-experiments flag with experimental features.")
+		exit("Terminating...", true)
+	}
+
+	if experimentalEnabled && (jsEnabled) {
 		commandArgs = append(commandArgs, "--enablejs")
 	}
 

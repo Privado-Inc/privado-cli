@@ -64,6 +64,8 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("overwrite", false, "If specified, the warning prompt for existing scan results is disabled and any existing results are overwritten")
 	scanCmd.Flags().Bool("debug", false, "Enables privado-core image output in debug mode")
 	scanCmd.Flags().String("jvm-args", "", "Specifies the JVM arguments to be passed to the scan engine; sets the 'JAVA_TOOL_OPTIONS' environment variable")
+	scanCmd.Flags().Bool("enable-experiments", false, "Flag to enable experimental features")
+	scanCmd.Flags().Bool("enable-javascript", false, "Experimental: When specified, enables the beta code scanner for javascript. Use with '--enable-experiments'")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -75,6 +77,8 @@ func scan(cmd *cobra.Command, args []string) {
 	explicitUpload, _ := cmd.Flags().GetBool("upload")
 	explicitSkipUpload, _ := cmd.Flags().GetBool("skip-upload")
 	jvmArgs, _ := cmd.Flags().GetString("jvm-args")
+	experimentalEnabled, _ := cmd.Flags().GetBool("enable-experiments")
+	experimentalJavascriptEnabled, _ := cmd.Flags().GetBool("enable-javascript")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -117,6 +121,13 @@ func scan(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	if !experimentalEnabled && (experimentalJavascriptEnabled) {
+		exit(fmt.Sprint(
+			"Experimental features cannot be used without the `--enable-experiments` flag.\n\n",
+			"For more info, run: 'privado help'\n",
+		), true)
+	}
+
 	fmt.Println("> Scanning directory:", fileutils.GetAbsolutePath(repository))
 
 	if dockerAccessKey, err := docker.GetPrivadoDockerAccessKey(true); err != nil || dockerAccessKey == "" {
@@ -136,6 +147,10 @@ func scan(cmd *cobra.Command, args []string) {
 		commandArgs = append(commandArgs, "--upload")
 	} else if explicitSkipUpload {
 		commandArgs = append(commandArgs, "--skip-upload")
+	}
+
+	if experimentalJavascriptEnabled {
+		commandArgs = append(commandArgs, "--enablejs")
 	}
 
 	// run image with options

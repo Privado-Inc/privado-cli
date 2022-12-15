@@ -167,6 +167,37 @@ func OptionWithDisabledDeduplication(disableDeduplication bool) RunImageOption {
 	}
 }
 
+func OptionWithDisabledRunTimeSemantics(disableRunTimeSemantics bool) RunImageOption {
+	return func(rh *runImageHandler) {
+		if disableRunTimeSemantics {
+			rh.args = append(rh.args, "-drs")
+		}
+	}
+}
+func OptionWithDisabledThisFiltering(disableThisFiltering bool) RunImageOption {
+	return func(rh *runImageHandler) {
+		if disableThisFiltering {
+			rh.args = append(rh.args, "-dtf")
+		}
+	}
+}
+func OptionWithDisabledFlowSeperationByDataElement(disableFlowSeperationByDataElement bool) RunImageOption {
+	return func(rh *runImageHandler) {
+		if disableFlowSeperationByDataElement {
+			rh.args = append(rh.args, "-dfsde")
+		}
+	}
+}
+func OptionWithDisabled2ndLevelClosure(disable2ndLevelClosure bool) RunImageOption {
+	return func(rh *runImageHandler) {
+		if disable2ndLevelClosure {
+			rh.args = append(rh.args, "-d2lc")
+		}
+	}
+}
+
+
+
 func OptionWithEnvironmentVariables(envVars []EnvVar) RunImageOption {
 	return func(rh *runImageHandler) {
 		if len(envVars) > 0 {

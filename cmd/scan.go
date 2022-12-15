@@ -56,6 +56,10 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().BoolP("ignore-default-rules", "i", false, "If specified, the default rules are ignored and only the specified rule configurations (-c) are considered")
 	scanCmd.Flags().Bool("skip-dependency-download", false, "When specified, the engine skips downloading all locally unavailable dependencies. Skipping dependency download can yield incomplete results")
 	scanCmd.Flags().Bool("disable-deduplication", false, "When specified, the engine does not remove duplicate and subset dataflows. This option is useful if you wish to review all flows (including duplicates) manually")
+	scanCmd.Flags().Bool("disable-runtime-semantics", false, "If specified, the semantics engine won't generate semantic at runtime")
+	scanCmd.Flags().Bool("disable-this-filtering", false, "If specified, filtering of flow using 'this filtering algorithm' will be avoided")
+	scanCmd.Flags().Bool("disable-flow-separation-by-data-element", false, "If specified, filtering of flow using 'flow separation by data element algorithm' will be avoided")
+	scanCmd.Flags().Bool("disable-2nd-level-closure", false, "If specified, 2nd level source derivation will be turned on")
 
 	scanCmd.Flags().Bool("upload", false, "If specified, will automatically attempt to upload the scan result to Privado Dashboard")
 	scanCmd.Flags().Bool("skip-upload", false, "If specified, the result artifacts will not be uploaded to Privado Dashboard")
@@ -74,6 +78,10 @@ func scan(cmd *cobra.Command, args []string) {
 	overwriteResults, _ := cmd.Flags().GetBool("overwrite")
 	skipDependencyDownload, _ := cmd.Flags().GetBool("skip-dependency-download")
 	disableDeduplication, _ := cmd.Flags().GetBool("disable-deduplication")
+	disableRunTimeSemantics, _ := cmd.Flags().GetBool("disable-runtime-semantics")
+	disableThisFiltering, _ := cmd.Flags().GetBool("disable-this-filtering")
+	disableFlowSeperationByDataElement, _ := cmd.Flags().GetBool("disable-flow-separation-by-data-element")
+	disable2ndLevelClosure, _ := cmd.Flags().GetBool("disable-2nd-level-closure")
 	explicitUpload, _ := cmd.Flags().GetBool("upload")
 	explicitSkipUpload, _ := cmd.Flags().GetBool("skip-upload")
 	jvmArgs, _ := cmd.Flags().GetString("jvm-args")
@@ -166,6 +174,11 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
 		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
 		docker.OptionWithDisabledDeduplication(disableDeduplication),
+		docker.OptionWithDisabledRunTimeSemantics(disableRunTimeSemantics),
+		docker.OptionWithDisabledThisFiltering(disableThisFiltering),
+		docker.OptionWithDisabledFlowSeperationByDataElement(disableFlowSeperationByDataElement),
+		docker.OptionWithDisabled2ndLevelClosure(disable2ndLevelClosure),
+
 		docker.OptionWithDebug(debug),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
 			{Key: "CI", Value: strings.ToUpper(strconv.FormatBool(ci.CISessionConfig.IsCI))},

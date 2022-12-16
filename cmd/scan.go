@@ -56,10 +56,6 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().BoolP("ignore-default-rules", "i", false, "If specified, the default rules are ignored and only the specified rule configurations (-c) are considered")
 	scanCmd.Flags().Bool("skip-dependency-download", false, "When specified, the engine skips downloading all locally unavailable dependencies. Skipping dependency download can yield incomplete results")
 	scanCmd.Flags().Bool("disable-deduplication", false, "When specified, the engine does not remove duplicate and subset dataflows. This option is useful if you wish to review all flows (including duplicates) manually")
-	scanCmd.Flags().Bool("disable-runtime-semantics", false, "If specified, the semantics engine won't generate semantic at runtime")
-	scanCmd.Flags().Bool("disable-this-filtering", false, "If specified, filtering of flow using 'this filtering algorithm' will be avoided")
-	scanCmd.Flags().Bool("disable-flow-separation-by-data-element", false, "If specified, filtering of flow using 'flow separation by data element algorithm' will be avoided")
-	scanCmd.Flags().Bool("disable-2nd-level-closure", false, "If specified, 2nd level source derivation will be turned on")
 
 	scanCmd.Flags().Bool("upload", false, "If specified, will automatically attempt to upload the scan result to Privado Dashboard")
 	scanCmd.Flags().Bool("skip-upload", false, "If specified, the result artifacts will not be uploaded to Privado Dashboard")
@@ -70,6 +66,10 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().String("jvm-args", "", "Specifies the JVM arguments to be passed to the scan engine; sets the 'JAVA_TOOL_OPTIONS' environment variable")
 	scanCmd.Flags().Bool("enable-experiments", false, "Flag to enable experimental features")
 	scanCmd.Flags().Bool("enable-javascript", false, "Experimental: When specified, enables the beta code scanner for javascript. Use with '--enable-experiments'")
+	scanCmd.Flags().Bool("disable-runtime-semantics", false, "Experimental: If specified, the semantics engine won't generate semantic at runtime")
+	scanCmd.Flags().Bool("disable-this-filtering", false, "Experimental: If specified, filtering of flow using 'this filtering algorithm' will be avoided")
+	scanCmd.Flags().Bool("disable-flow-separation-by-data-element", false, "Experimental: If specified, filtering of flow using 'flow separation by data element algorithm' will be avoided")
+	scanCmd.Flags().Bool("disable-2nd-level-closure", false, "Experimental: If specified, 2nd level source derivation will be turned on")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -78,15 +78,15 @@ func scan(cmd *cobra.Command, args []string) {
 	overwriteResults, _ := cmd.Flags().GetBool("overwrite")
 	skipDependencyDownload, _ := cmd.Flags().GetBool("skip-dependency-download")
 	disableDeduplication, _ := cmd.Flags().GetBool("disable-deduplication")
-	disableRunTimeSemantics, _ := cmd.Flags().GetBool("disable-runtime-semantics")
-	disableThisFiltering, _ := cmd.Flags().GetBool("disable-this-filtering")
-	disableFlowSeperationByDataElement, _ := cmd.Flags().GetBool("disable-flow-separation-by-data-element")
-	disable2ndLevelClosure, _ := cmd.Flags().GetBool("disable-2nd-level-closure")
 	explicitUpload, _ := cmd.Flags().GetBool("upload")
 	explicitSkipUpload, _ := cmd.Flags().GetBool("skip-upload")
 	jvmArgs, _ := cmd.Flags().GetString("jvm-args")
 	experimentalEnabled, _ := cmd.Flags().GetBool("enable-experiments")
 	experimentalJavascriptEnabled, _ := cmd.Flags().GetBool("enable-javascript")
+	disableRunTimeSemantics, _ := cmd.Flags().GetBool("disable-runtime-semantics")
+	disableThisFiltering, _ := cmd.Flags().GetBool("disable-this-filtering")
+	disableFlowSeperationByDataElement, _ := cmd.Flags().GetBool("disable-flow-separation-by-data-element")
+	disable2ndLevelClosure, _ := cmd.Flags().GetBool("disable-2nd-level-closure")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -129,7 +129,7 @@ func scan(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if !experimentalEnabled && (experimentalJavascriptEnabled) {
+	if !experimentalEnabled && (experimentalJavascriptEnabled || disableRunTimeSemantics || disableThisFiltering || disableFlowSeperationByDataElement || disable2ndLevelClosure) {
 		exit(fmt.Sprint(
 			"Experimental features cannot be used without the `--enable-experiments` flag.\n\n",
 			"For more info, run: 'privado help'\n",
@@ -161,6 +161,22 @@ func scan(cmd *cobra.Command, args []string) {
 		commandArgs = append(commandArgs, "--enablejs")
 	}
 
+	if disableRunTimeSemantics {
+		commandArgs = append(commandArgs, "-drs")
+	}
+
+	if disableFlowSeperationByDataElement {
+		commandArgs = append(commandArgs, "-dfsde")
+	}
+
+	if disableThisFiltering {
+		commandArgs = append(commandArgs, "-dtf")
+	}
+
+	if disable2ndLevelClosure {
+		commandArgs = append(commandArgs, "-d2lc")
+	}
+
 	// run image with options
 	err = docker.RunImage(
 		docker.OptionWithLatestImage(false), // because we already pull the image for access-key (with pullImage parameter)
@@ -174,11 +190,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
 		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
 		docker.OptionWithDisabledDeduplication(disableDeduplication),
-		docker.OptionWithDisabledRunTimeSemantics(disableRunTimeSemantics),
-		docker.OptionWithDisabledThisFiltering(disableThisFiltering),
-		docker.OptionWithDisabledFlowSeperationByDataElement(disableFlowSeperationByDataElement),
-		docker.OptionWithDisabled2ndLevelClosure(disable2ndLevelClosure),
-
+		
 		docker.OptionWithDebug(debug),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
 			{Key: "CI", Value: strings.ToUpper(strconv.FormatBool(ci.CISessionConfig.IsCI))},

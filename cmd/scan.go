@@ -66,6 +66,10 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().String("jvm-args", "", "Specifies the JVM arguments to be passed to the scan engine; sets the 'JAVA_TOOL_OPTIONS' environment variable")
 	scanCmd.Flags().Bool("enable-experiments", false, "Flag to enable experimental features")
 	scanCmd.Flags().Bool("enable-javascript", false, "Experimental: When specified, enables the beta code scanner for javascript. Use with '--enable-experiments'")
+	scanCmd.Flags().Bool("disable-runtime-semantics", false, "Experimental: If specified, the semantics engine won't generate semantic at runtime")
+	scanCmd.Flags().Bool("disable-this-filtering", false, "Experimental: If specified, filtering of flow using 'this filtering algorithm' will be avoided")
+	scanCmd.Flags().Bool("disable-flow-separation-by-data-element", false, "Experimental: If specified, filtering of flow using 'flow separation by data element algorithm' will be avoided")
+	scanCmd.Flags().Bool("disable-2nd-level-closure", false, "Experimental: If specified, 2nd level source derivation will be turned on")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -79,6 +83,10 @@ func scan(cmd *cobra.Command, args []string) {
 	jvmArgs, _ := cmd.Flags().GetString("jvm-args")
 	experimentalEnabled, _ := cmd.Flags().GetBool("enable-experiments")
 	experimentalJavascriptEnabled, _ := cmd.Flags().GetBool("enable-javascript")
+	disableRunTimeSemantics, _ := cmd.Flags().GetBool("disable-runtime-semantics")
+	disableThisFiltering, _ := cmd.Flags().GetBool("disable-this-filtering")
+	disableFlowSeperationByDataElement, _ := cmd.Flags().GetBool("disable-flow-separation-by-data-element")
+	disable2ndLevelClosure, _ := cmd.Flags().GetBool("disable-2nd-level-closure")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -121,7 +129,7 @@ func scan(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if !experimentalEnabled && (experimentalJavascriptEnabled) {
+	if !experimentalEnabled && (experimentalJavascriptEnabled || disableRunTimeSemantics || disableThisFiltering || disableFlowSeperationByDataElement || disable2ndLevelClosure) {
 		exit(fmt.Sprint(
 			"Experimental features cannot be used without the `--enable-experiments` flag.\n\n",
 			"For more info, run: 'privado help'\n",
@@ -153,6 +161,22 @@ func scan(cmd *cobra.Command, args []string) {
 		commandArgs = append(commandArgs, "--enablejs")
 	}
 
+	if disableRunTimeSemantics {
+		commandArgs = append(commandArgs, "-drs")
+	}
+
+	if disableFlowSeperationByDataElement {
+		commandArgs = append(commandArgs, "-dfsde")
+	}
+
+	if disableThisFiltering {
+		commandArgs = append(commandArgs, "-dtf")
+	}
+
+	if disable2ndLevelClosure {
+		commandArgs = append(commandArgs, "-d2lc")
+	}
+
 	// run image with options
 	err = docker.RunImage(
 		docker.OptionWithLatestImage(false), // because we already pull the image for access-key (with pullImage parameter)
@@ -166,6 +190,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
 		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
 		docker.OptionWithDisabledDeduplication(disableDeduplication),
+		
 		docker.OptionWithDebug(debug),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
 			{Key: "CI", Value: strings.ToUpper(strconv.FormatBool(ci.CISessionConfig.IsCI))},

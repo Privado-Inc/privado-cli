@@ -167,6 +167,7 @@ func OptionWithDisabledDeduplication(disableDeduplication bool) RunImageOption {
 	}
 }
 
+
 func OptionWithEnvironmentVariables(envVars []EnvVar) RunImageOption {
 	return func(rh *runImageHandler) {
 		if len(envVars) > 0 {

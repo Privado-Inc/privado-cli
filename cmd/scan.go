@@ -66,6 +66,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().String("jvm-args", "", "Specifies the JVM arguments to be passed to the scan engine; sets the 'JAVA_TOOL_OPTIONS' environment variable")
 	scanCmd.Flags().Bool("enable-experiments", false, "Flag to enable experimental features")
 	scanCmd.Flags().Bool("enable-javascript", false, "Experimental: When specified, enables the beta code scanner for javascript. Use with '--enable-experiments'")
+	scanCmd.Flags().Bool("enable-python", false, "Experimental: When specified, enables the beta code scanner for python. Use with '--enable-experiments'")
 	scanCmd.Flags().Bool("disable-runtime-semantics", false, "Experimental: If specified, the semantics engine won't generate semantic at runtime")
 	scanCmd.Flags().Bool("disable-this-filtering", false, "Experimental: If specified, filtering of flow using 'this filtering algorithm' will be avoided")
 	scanCmd.Flags().Bool("disable-flow-separation-by-data-element", false, "Experimental: If specified, filtering of flow using 'flow separation by data element algorithm' will be avoided")
@@ -83,6 +84,7 @@ func scan(cmd *cobra.Command, args []string) {
 	jvmArgs, _ := cmd.Flags().GetString("jvm-args")
 	experimentalEnabled, _ := cmd.Flags().GetBool("enable-experiments")
 	experimentalJavascriptEnabled, _ := cmd.Flags().GetBool("enable-javascript")
+	experimentalPythonEnabled, _ := cmd.Flags().GetBool("enable-python")
 	disableRunTimeSemantics, _ := cmd.Flags().GetBool("disable-runtime-semantics")
 	disableThisFiltering, _ := cmd.Flags().GetBool("disable-this-filtering")
 	disableFlowSeperationByDataElement, _ := cmd.Flags().GetBool("disable-flow-separation-by-data-element")
@@ -129,7 +131,7 @@ func scan(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if !experimentalEnabled && (experimentalJavascriptEnabled || disableRunTimeSemantics || disableThisFiltering || disableFlowSeperationByDataElement || disable2ndLevelClosure) {
+	if !experimentalEnabled && (experimentalJavascriptEnabled || disableRunTimeSemantics || disableThisFiltering || disableFlowSeperationByDataElement || disable2ndLevelClosure || experimentalPythonEnabled) {
 		exit(fmt.Sprint(
 			"Experimental features cannot be used without the `--enable-experiments` flag.\n\n",
 			"For more info, run: 'privado help'\n",
@@ -159,6 +161,10 @@ func scan(cmd *cobra.Command, args []string) {
 
 	if experimentalJavascriptEnabled {
 		commandArgs = append(commandArgs, "--enablejs")
+	}
+	
+	if experimentalPythonEnabled {
+		commandArgs = append(commandArgs, "--enable-python")
 	}
 
 	if disableRunTimeSemantics {

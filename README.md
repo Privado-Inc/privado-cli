@@ -122,7 +122,7 @@ When using [WSL](https://docs.microsoft.com/en-us/windows/wsl/), we recommend mo
 If you do not wish to use the pre-built binaries shipped in releases, you can choose to build Privado CLI locally. To do this, make sure that [GoLang](https://go.dev/doc/install) is installed and follow the following steps:
 
 1. Clone the repository: `git clone https://github.com/Privado-Inc/privado-cli.git`    
-2. Change directory: `cd privado`   
+2. Change directory: `cd privado-cli`   
 3. Skip this step if you intend to build the `main` branch.    
     To build a particular [release](https://github.com/Privado-Inc/privado-cli/releases/latest), checkout the intended tag: `git checkout <tag>`   
 4. Build with Go: `go build -o privado`   

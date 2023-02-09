@@ -70,7 +70,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("disable-this-filtering", false, "Experimental: If specified, filtering of flow using 'this filtering algorithm' will be avoided")
 	scanCmd.Flags().Bool("disable-flow-separation-by-data-element", false, "Experimental: If specified, filtering of flow using 'flow separation by data element algorithm' will be avoided")
 	scanCmd.Flags().Bool("disable-2nd-level-closure", false, "Experimental: If specified, 2nd level source derivation will be turned on")
-	scanCmd.Flags().BoolP("unresolved-report", "u", false, "Flag to enable generation unresolved method name reports")
+	scanCmd.Flags().Bool("generate-unresolved-name-report", false, "Flag to enable generation unresolved method name reports")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -88,7 +88,7 @@ func scan(cmd *cobra.Command, args []string) {
 	disableThisFiltering, _ := cmd.Flags().GetBool("disable-this-filtering")
 	disableFlowSeperationByDataElement, _ := cmd.Flags().GetBool("disable-flow-separation-by-data-element")
 	disable2ndLevelClosure, _ := cmd.Flags().GetBool("disable-2nd-level-closure")
-	unresolvedReport, _ := cmd.Flags().GetBool("unresolved-report")
+	generateUnresolvedNameReport, _ := cmd.Flags().GetBool("generate-unresolved-name-report")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -179,7 +179,7 @@ func scan(cmd *cobra.Command, args []string) {
 		commandArgs = append(commandArgs, "-d2lc")
 	}
 
-	if unresolvedReport {
+	if generateUnresolvedNameReport {
 		commandArgs = append(commandArgs, "-ur")
 	}
 

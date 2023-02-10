@@ -70,6 +70,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("disable-this-filtering", false, "Experimental: If specified, filtering of flow using 'this filtering algorithm' will be avoided")
 	scanCmd.Flags().Bool("disable-flow-separation-by-data-element", false, "Experimental: If specified, filtering of flow using 'flow separation by data element algorithm' will be avoided")
 	scanCmd.Flags().Bool("disable-2nd-level-closure", false, "Experimental: If specified, 2nd level source derivation will be turned on")
+	scanCmd.Flags().Bool("generate-unresolved-name-report", false, "Flag to enable generation unresolved method name reports")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -87,6 +88,7 @@ func scan(cmd *cobra.Command, args []string) {
 	disableThisFiltering, _ := cmd.Flags().GetBool("disable-this-filtering")
 	disableFlowSeperationByDataElement, _ := cmd.Flags().GetBool("disable-flow-separation-by-data-element")
 	disable2ndLevelClosure, _ := cmd.Flags().GetBool("disable-2nd-level-closure")
+	generateUnresolvedNameReport, _ := cmd.Flags().GetBool("generate-unresolved-name-report")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -177,6 +179,10 @@ func scan(cmd *cobra.Command, args []string) {
 		commandArgs = append(commandArgs, "-d2lc")
 	}
 
+	if generateUnresolvedNameReport {
+		commandArgs = append(commandArgs, "-ur")
+	}
+
 	// run image with options
 	err = docker.RunImage(
 		docker.OptionWithLatestImage(false), // because we already pull the image for access-key (with pullImage parameter)
@@ -190,7 +196,7 @@ func scan(cmd *cobra.Command, args []string) {
 		docker.OptionWithIgnoreDefaultRules(ignoreDefaultRules),
 		docker.OptionWithSkipDependencyDownload(skipDependencyDownload),
 		docker.OptionWithDisabledDeduplication(disableDeduplication),
-		
+
 		docker.OptionWithDebug(debug),
 		docker.OptionWithEnvironmentVariables([]docker.EnvVar{
 			{Key: "CI", Value: strings.ToUpper(strconv.FormatBool(ci.CISessionConfig.IsCI))},

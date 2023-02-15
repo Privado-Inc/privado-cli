@@ -71,6 +71,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("disable-flow-separation-by-data-element", false, "Experimental: If specified, filtering of flow using 'flow separation by data element algorithm' will be avoided")
 	scanCmd.Flags().Bool("disable-2nd-level-closure", false, "Experimental: If specified, 2nd level source derivation will be turned on")
 	scanCmd.Flags().Bool("generate-unresolved-name-report", false, "Flag to enable generation unresolved method name reports")
+	scanCmd.Flags().Bool("generate-unfiltered-report", false, "If specified, additionally generates an unfiltered flow report")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -89,6 +90,7 @@ func scan(cmd *cobra.Command, args []string) {
 	disableFlowSeperationByDataElement, _ := cmd.Flags().GetBool("disable-flow-separation-by-data-element")
 	disable2ndLevelClosure, _ := cmd.Flags().GetBool("disable-2nd-level-closure")
 	generateUnresolvedNameReport, _ := cmd.Flags().GetBool("generate-unresolved-name-report")
+	generateUnfilteredReport, _ := cmd.Flags().GetBool("generate-unfiltered-report")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -181,6 +183,10 @@ func scan(cmd *cobra.Command, args []string) {
 
 	if generateUnresolvedNameReport {
 		commandArgs = append(commandArgs, "-ur")
+	}
+
+	if generateUnfilteredReport {
+		commandArgs = append(commandArgs, "-tout")
 	}
 
 	// run image with options

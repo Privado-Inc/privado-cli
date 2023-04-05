@@ -73,6 +73,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("enable-api-display", false, "Experimental: If specified, API display without domain for brute API tagger will be turned on")
 	scanCmd.Flags().Bool("generate-unresolved-name-report", false, "Flag to enable generation unresolved method name reports")
 	scanCmd.Flags().Bool("generate-unfiltered-report", false, "If specified, additionally generates an unfiltered flow report")
+	scanCmd.Flags().Bool("generate-audit-report", false, "If specified, audit report will be generated")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -93,6 +94,7 @@ func scan(cmd *cobra.Command, args []string) {
 	enableAPIDisplay, _ := cmd.Flags().GetBool("enable-api-display")
 	generateUnresolvedNameReport, _ := cmd.Flags().GetBool("generate-unresolved-name-report")
 	generateUnfilteredReport, _ := cmd.Flags().GetBool("generate-unfiltered-report")
+	generateAuditReport, _ := cmd.Flags().GetBool("generate-audit-report")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -193,6 +195,10 @@ func scan(cmd *cobra.Command, args []string) {
 
 	if generateUnfilteredReport {
 		commandArgs = append(commandArgs, "-tout")
+	}
+
+	if generateAuditReport {
+		commandArgs = append(commandArgs, "-gar")
 	}
 
 	// run image with options

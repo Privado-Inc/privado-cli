@@ -74,6 +74,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("generate-unresolved-name-report", false, "Flag to enable generation unresolved method name reports")
 	scanCmd.Flags().Bool("generate-unfiltered-report", false, "If specified, additionally generates an unfiltered flow report")
 	scanCmd.Flags().Bool("generate-audit-report", false, "If specified, audit report will be generated")
+	scanCmd.Flags().Bool("enable-audit-semantic", false, "Flag to enable semantic filtering in audit report")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -95,6 +96,7 @@ func scan(cmd *cobra.Command, args []string) {
 	generateUnresolvedNameReport, _ := cmd.Flags().GetBool("generate-unresolved-name-report")
 	generateUnfilteredReport, _ := cmd.Flags().GetBool("generate-unfiltered-report")
 	generateAuditReport, _ := cmd.Flags().GetBool("generate-audit-report")
+	enableAuditSemantic, _ := cmd.Flags().GetBool("enable-audit-semantic")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -199,6 +201,10 @@ func scan(cmd *cobra.Command, args []string) {
 
 	if generateAuditReport {
 		commandArgs = append(commandArgs, "-gar")
+	}
+
+	if enableAuditSemantic {
+		commandArgs = append(commandArgs, "-eas")
 	}
 
 	// run image with options

@@ -1,4 +1,4 @@
-# Privado CLI
+# Privado CLI 
 
 [![slack](https://img.shields.io/badge/slack-privado-brightgreen.svg?logo=slack)](https://join.slack.com/t/devprivops/shared_invite/zt-yk5zcxh3-gj8sS9w6SvL5lNYZLMbIpw)
 

@@ -76,6 +76,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("generate-unfiltered-report", false, "If specified, additionally generates an unfiltered flow report")
 	scanCmd.Flags().Bool("generate-audit-report", false, "If specified, audit report will be generated")
 	scanCmd.Flags().Bool("enable-audit-semantic", false, "Flag to enable semantic filtering in audit report")
+	scanCmd.Flags().Bool("enable-lambda-flows", false, "Flag to enable lambda flows")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -99,6 +100,7 @@ func scan(cmd *cobra.Command, args []string) {
 	generateUnfilteredReport, _ := cmd.Flags().GetBool("generate-unfiltered-report")
 	generateAuditReport, _ := cmd.Flags().GetBool("generate-audit-report")
 	enableAuditSemantic, _ := cmd.Flags().GetBool("enable-audit-semantic")
+	enableLambdaFlows, _ := cmd.Flags().GetBool("enable-lambda-flows")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -211,6 +213,10 @@ func scan(cmd *cobra.Command, args []string) {
 
 	if enableAuditSemantic {
 		commandArgs = append(commandArgs, "-eas")
+	}
+
+	if enableLambdaFlows {
+		commandArgs = append(commandArgs, "-elf")
 	}
 
 	// run image with options

@@ -24,6 +24,7 @@ package docker
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/Privado-Inc/privado-cli/pkg/config"
 	"github.com/Privado-Inc/privado-cli/pkg/telemetry"
@@ -167,7 +168,6 @@ func OptionWithDisabledDeduplication(disableDeduplication bool) RunImageOption {
 	}
 }
 
-
 func OptionWithEnvironmentVariables(envVars []EnvVar) RunImageOption {
 	return func(rh *runImageHandler) {
 		if len(envVars) > 0 {
@@ -218,7 +218,7 @@ func OptionWithDebug(isDebug bool) RunImageOption {
 		// currently only enable output in debug mode
 		if isDebug {
 			rh.attachOutput = true
-			rh.args = append(rh.args, fmt.Sprintf("-Dlog4j2.configurationFile=%s", config.AppConfig.Container.LogConfigVolumeDir))
+			rh.args = append(rh.args, fmt.Sprintf("-Dlog4j2.configurationFile=%s", config.AppConfig.Container.LogConfigVolumeDir), fmt.Sprintf("-DlogFilePath=%s", filepath.Join(config.AppConfig.Container.SourceCodeVolumeDir, ".privado", "debug.log")))
 		}
 	}
 }

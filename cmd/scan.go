@@ -78,6 +78,7 @@ func defineScanFlags(cmd *cobra.Command) {
 	scanCmd.Flags().Bool("enable-audit-semantic", false, "Flag to enable semantic filtering in audit report")
 	scanCmd.Flags().Bool("enable-lambda-flows", false, "Flag to enable lambda flows")
 	scanCmd.Flags().Bool("monolith", false, "Flag to divide a monolith repo into subProjects")
+	scanCmd.Flags().Bool("enable-api-by-parameter", false, "Flag to enable api tagging by parameter")
 }
 
 func scan(cmd *cobra.Command, args []string) {
@@ -103,6 +104,7 @@ func scan(cmd *cobra.Command, args []string) {
 	enableAuditSemantic, _ := cmd.Flags().GetBool("enable-audit-semantic")
 	enableLambdaFlows, _ := cmd.Flags().GetBool("enable-lambda-flows")
 	isMonolith, _ := cmd.Flags().GetBool("monolith")
+	enableApiByParameter, _ := cmd.Flags().GetBool("enable-api-by-parameter")
 
 	externalRules, _ := cmd.Flags().GetString("config")
 	if externalRules != "" {
@@ -223,6 +225,10 @@ func scan(cmd *cobra.Command, args []string) {
 
 	if isMonolith {
 		commandArgs = append(commandArgs, "--monolith")
+	}
+
+	if enableApiByParameter {
+		commandArgs = append(commandArgs, "--enable-api-by-parameter")
 	}
 
 	// run image with options
